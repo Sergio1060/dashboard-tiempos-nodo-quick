@@ -1,655 +1,960 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quick Go — Dashboard Operativo | Análisis de Tiempos Nodo</title>
-  <meta name="description" content="Dashboard ejecutivo de análisis operativo Quick Go. Tiempos de ciclo, asignación y recorrido por nodo.">
-  <link rel="stylesheet" href="styles.css">
-  <!-- PWA manifest (opcional) -->
-  <meta name="theme-color" content="#0D0D0D">
-  <!-- Chart.js -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quick Go — Dashboard Operativo · Análisis de Tiempos Nodo</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap');
+:root{
+  --negro:#0D0D0D;--surface:#161616;--surface2:#1C1C1C;--surface3:#222;
+  --border:#2A2A2A;--oro:#F5C800;--oro-dim:rgba(245,200,0,.12);
+  --text:#F0F0F0;--muted:#8A8A8A;--muted2:#4A4A4A;
+  --verde:#22C55E;--rojo:#EF4444;--naranja:#F97316;--azul:#3B82F6;
+  --radius:8px;--radius-lg:14px;
+  --ff-d:'Syne',sans-serif;--ff-b:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size:14px;line-height:1.5;min-height:100vh}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+/* LOADING */
+#loading{position:fixed;inset:0;background:var(--negro);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:999;transition:opacity .5s}
+.ld-logo{font-family:var(--ff-d);font-size:40px;font-weight:800;color:var(--oro);letter-spacing:-1px}
+.ld-sub{font-size:11px;color:var(--muted2);letter-spacing:3px;margin-top:4px}
+.ld-bar{width:180px;height:2px;background:var(--border);border-radius:2px;overflow:hidden;margin-top:24px}
+.ld-prog{height:100%;width:0;background:var(--oro);animation:ldprog 1.4s ease forwards}
+@keyframes ldprog{to{width:100%}}
+.ld-txt{font-size:11px;color:var(--muted2);margin-top:8px}
+
+/* TOPBAR */
+.topbar{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:52px;background:rgba(13,13,13,.95);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:30px;height:30px;background:var(--oro);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:var(--ff-d);font-weight:800;font-size:14px;color:var(--negro)}
+.brand-name{font-family:var(--ff-d);font-weight:700;font-size:15px}
+.brand-sub{font-size:10px;color:var(--muted)}
+.topbar-right{display:flex;align-items:center;gap:14px}
+.badge-periodo{font-size:11px;color:var(--muted);background:var(--surface2);border:1px solid var(--border);padding:3px 10px;border-radius:20px}
+.live{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--verde)}
+.live::before{content:'';width:6px;height:6px;background:var(--verde);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* FILTERS BAR */
+.filters-bar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.filters-bar label{font-size:11px;color:var(--muted);font-weight:600;letter-spacing:.4px;text-transform:uppercase}
+.filters-bar select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:12px;font-family:var(--ff-b);cursor:pointer;outline:none;transition:.2s}
+.filters-bar select:focus{border-color:var(--oro)}
+.filters-bar select:hover{border-color:var(--muted2)}
+.btn-reset{background:transparent;border:1px solid var(--border);color:var(--muted);padding:5px 12px;border-radius:6px;font-size:11px;cursor:pointer;font-family:var(--ff-b);transition:.2s}
+.btn-reset:hover{border-color:var(--oro);color:var(--oro)}
+.filter-sep{width:1px;height:20px;background:var(--border)}
+
+/* NAV TABS */
+.nav-tabs{display:flex;gap:0;padding:0 24px;background:var(--negro);border-bottom:1px solid var(--border);overflow-x:auto}
+.nav-tab{padding:11px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap;user-select:none;letter-spacing:.3px}
+.nav-tab:hover{color:var(--text)}
+.nav-tab.active{color:var(--oro);border-bottom-color:var(--oro)}
+
+/* CONTENT */
+.page{display:none;padding:22px 24px;max-width:1600px;margin:0 auto}
+.page.active{display:block}
+
+/* SECTION HEADER */
+.sec-hdr{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
+.sec-accent{width:3px;height:17px;background:var(--oro);border-radius:2px;flex-shrink:0}
+.sec-title{font-family:var(--ff-d);font-size:17px;font-weight:700}
+.sec-sub{font-size:12px;color:var(--muted)}
+
+/* KPI GRID */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:22px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:16px 18px;position:relative;overflow:hidden;transition:.2s}
+.kpi-card:hover{border-color:rgba(245,200,0,.35)}
+.kpi-card.hi{border-color:var(--oro);background:linear-gradient(135deg,var(--surface),rgba(245,200,0,.08))}
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--oro);opacity:0;transition:.2s}
+.kpi-card:hover::after,.kpi-card.hi::after{opacity:1}
+.kpi-icon{font-size:18px;display:block;margin-bottom:8px}
+.kpi-val{font-family:var(--ff-d);font-size:24px;font-weight:800;line-height:1;margin-bottom:3px}
+.kpi-card.hi .kpi-val{color:var(--oro)}
+.kpi-lbl{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.kpi-trend{display:flex;align-items:center;gap:4px;margin-top:7px;font-size:11px;color:var(--muted)}
+.kpi-trend.up{color:var(--verde)}.kpi-trend.dn{color:var(--rojo)}
+
+/* CHART GRID */
+.chart-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:20px}
+.chart-grid.w3{grid-template-columns:repeat(3,1fr)}
+.chart-grid.wide{grid-template-columns:2fr 1fr}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.chart-hdr{padding:12px 16px 8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-start}
+.chart-title{font-family:var(--ff-d);font-size:13px;font-weight:700}
+.chart-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.chart-body{padding:14px}
+
+/* TABLE */
+.tbl-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:16px}
+.tbl-hdr{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.tbl-title{font-family:var(--ff-d);font-size:13px;font-weight:700}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);padding:9px 13px;background:var(--surface2);text-align:right}
+.data-table th:first-child{text-align:left}
+.data-table td{padding:8px 13px;font-size:12px;border-bottom:1px solid var(--border);text-align:right}
+.data-table td:first-child{text-align:left}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr:hover{background:var(--surface2)}
+.data-table tfoot td{font-weight:700;color:var(--oro);background:var(--surface2);border-top:1px solid var(--border)}
+
+/* BADGES */
+.b{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700}
+.b-v{background:rgba(34,197,94,.15);color:var(--verde)}
+.b-r{background:rgba(239,68,68,.15);color:var(--rojo)}
+.b-n{background:rgba(249,115,22,.15);color:var(--naranja)}
+.b-o{background:rgba(245,200,0,.12);color:var(--oro)}
+
+/* RANGE CARDS */
+.range-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.range-card{border-radius:var(--radius-lg);padding:14px;border:1px solid var(--border);text-align:center}
+.range-card.r1{background:linear-gradient(135deg,rgba(34,197,94,.07),var(--surface));border-color:rgba(34,197,94,.25)}
+.range-card.r2{background:linear-gradient(135deg,rgba(59,130,246,.07),var(--surface));border-color:rgba(59,130,246,.25)}
+.range-card.r3{background:linear-gradient(135deg,rgba(249,115,22,.07),var(--surface));border-color:rgba(249,115,22,.25)}
+.range-card.r4{background:linear-gradient(135deg,rgba(239,68,68,.07),var(--surface));border-color:rgba(239,68,68,.25)}
+.rc-label{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.rc-km{font-family:var(--ff-d);font-size:15px;font-weight:800;margin:5px 0 3px}
+.rc-count{font-size:22px;font-weight:800}
+.r1 .rc-count{color:var(--verde)}.r2 .rc-count{color:var(--azul)}.r3 .rc-count{color:var(--naranja)}.r4 .rc-count{color:var(--rojo)}
+.rc-pct{font-size:11px;color:var(--muted)}
+.rc-time{font-size:11px;color:var(--muted);margin-top:6px}
+.rc-time strong{color:var(--text)}
+
+/* WEEK COMPARE */
+.week-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.week-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
+.week-card.cur{border-color:var(--oro)}
+.wk-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.wk-lbl.oro{color:var(--oro)}
+.wk-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border)}
+.wk-row:last-child{border-bottom:none}
+.wk-k{font-size:11px;color:var(--muted)}
+.wk-v{font-size:12px;font-weight:600}
+
+/* INSIGHTS */
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-bottom:20px}
+.insight-card{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--oro);border-radius:var(--radius);padding:13px 15px;display:flex;gap:11px}
+.ins-icon{font-size:18px;flex-shrink:0}
+.ins-text{font-size:12px;line-height:1.6}
+.ins-text strong{color:var(--oro)}
+.ins-meta{font-size:10px;color:var(--muted2);margin-top:3px}
+
+/* EXEC HERO */
+.exec-hero{background:linear-gradient(135deg,#111,#1a1500);border:1px solid rgba(245,200,0,.2);border-radius:var(--radius-lg);padding:24px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.exec-hero h1{font-family:var(--ff-d);font-size:26px;font-weight:800;color:var(--oro);line-height:1.1}
+.exec-hero p{font-size:13px;color:var(--muted);margin-top:5px}
+.exec-strip{display:flex;gap:24px;flex-wrap:wrap}
+.exec-kpi{text-align:center}
+.exec-kpi-val{font-family:var(--ff-d);font-size:28px;font-weight:800;line-height:1}
+.exec-kpi-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:3px}
+.exec-div{width:1px;background:var(--border);align-self:stretch}
+
+/* HEATMAP */
+.heatmap-wrap{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;padding:14px}
+.hm-cell{height:32px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:rgba(255,255,255,.75);cursor:default;transition:transform .1s}
+.hm-cell:hover{transform:scale(1.15);z-index:2}
+.hm-labels{display:grid;grid-template-columns:repeat(24,1fr);gap:3px;padding:0 14px 8px}
+.hm-lbl{text-align:center;font-size:9px;color:var(--muted2)}
+
+/* SEMAFORO TABLE */
+.sema-verde{color:var(--verde)}.sema-naranja{color:var(--naranja)}.sema-rojo{color:var(--rojo)}
+
+/* RESPONSIVE */
+@media(max-width:1100px){.chart-grid,.chart-grid.w3,.chart-grid.wide{grid-template-columns:1fr}.range-grid{grid-template-columns:repeat(2,1fr)}.week-grid{grid-template-columns:1fr}.exec-hero{flex-direction:column}}
+@media(max-width:600px){.page{padding:14px 12px}.kpi-grid{grid-template-columns:repeat(2,1fr)}.topbar{padding:0 12px}.filters-bar{padding:8px 12px}.nav-tabs{padding:0 12px}}
+
+/* UTIL */
+.mt{margin-top:16px}.mb{margin-bottom:16px}.full{grid-column:1/-1}
+</style>
 </head>
 <body>
 
 <!-- LOADING -->
-<div class="loading-overlay" id="loading-overlay">
-  <div class="loading-logo">QGO</div>
-  <div style="font-size:12px;color:#5A5A5A;margin-top:8px;letter-spacing:2px;">OPERACIONES</div>
-  <div class="loading-bar"><div class="loading-progress"></div></div>
-  <div class="loading-text">Cargando análisis operativo...</div>
+<div id="loading">
+  <div class="ld-logo">QGO</div>
+  <div class="ld-sub">OPERACIONES</div>
+  <div class="ld-bar"><div class="ld-prog"></div></div>
+  <div class="ld-txt">Cargando análisis operativo…</div>
 </div>
 
-<!-- TOP BAR -->
+<!-- TOPBAR -->
 <header class="topbar">
-  <div class="topbar-brand">
-    <div class="brand-mark"><span>Q</span></div>
+  <div class="brand">
+    <div class="brand-mark">Q</div>
     <div>
       <div class="brand-name">Quick Go</div>
-      <div class="brand-sub">Dashboard Operativo · Análisis de Tiempos</div>
+      <div class="brand-sub">Dashboard Operativo · Análisis de Tiempos Nodo</div>
     </div>
   </div>
-  <div class="topbar-meta">
-    <span class="periodo-badge">📅 19 May – 09 Jun 2026</span>
-    <span class="live-dot">Datos actualizados</span>
+  <div class="topbar-right">
+    <span class="badge-periodo">📅 19 May – 09 Jun 2026</span>
+    <span class="live">Activo</span>
   </div>
 </header>
 
-<!-- NAV TABS -->
+<!-- FILTERS -->
+<div class="filters-bar">
+  <label>Semana</label>
+  <select id="f-semana">
+    <option value="">Todas</option>
+    <option value="sem21">Sem 21 (19–25 May)</option>
+    <option value="sem22">Sem 22 (26 May–1 Jun)</option>
+    <option value="sem23">Sem 23 (2–9 Jun)</option>
+  </select>
+  <div class="filter-sep"></div>
+  <label>Día de Semana</label>
+  <select id="f-dow">
+    <option value="">Todos</option>
+    <option value="1">Lunes</option>
+    <option value="2">Martes</option>
+    <option value="3">Miércoles</option>
+    <option value="4">Jueves</option>
+    <option value="5">Viernes</option>
+    <option value="6">Sábado</option>
+    <option value="0">Domingo</option>
+  </select>
+  <div class="filter-sep"></div>
+  <label>Franja Horaria</label>
+  <select id="f-franja">
+    <option value="">Todas</option>
+    <option value="madrugada">Madrugada (0–5h)</option>
+    <option value="manana">Mañana (6–11h)</option>
+    <option value="tarde">Tarde (12–17h)</option>
+    <option value="noche">Noche (18–23h)</option>
+  </select>
+  <div class="filter-sep"></div>
+  <label>SLA Ciclo</label>
+  <select id="f-sla">
+    <option value="">Todos</option>
+    <option value="cumple">Cumple (≤180m)</option>
+    <option value="riesgo">Riesgo (150–180m)</option>
+    <option value="incumple">Incumple (>180m)</option>
+  </select>
+  <button class="btn-reset" id="btn-reset">↺ Limpiar filtros</button>
+</div>
+
+<!-- TABS -->
 <nav class="nav-tabs">
   <div class="nav-tab active" data-tab="resumen">📊 Resumen Ejecutivo</div>
   <div class="nav-tab" data-tab="tiempos">⏱ Análisis de Tiempos</div>
   <div class="nav-tab" data-tab="horario">🕐 Distribución Horaria</div>
   <div class="nav-tab" data-tab="rangos">📍 Análisis por Km</div>
   <div class="nav-tab" data-tab="semanal">📅 Evolución Semanal</div>
-  <div class="nav-tab" data-tab="matriz">🎯 Matriz de Eficiencia</div>
-  <div class="nav-tab" data-tab="insights">💡 Insights Automáticos</div>
+  <div class="nav-tab" data-tab="matriz">🎯 Matriz Eficiencia</div>
+  <div class="nav-tab" data-tab="insights">💡 Insights</div>
   <div class="nav-tab" data-tab="ejecutivo">🏆 Vista Ejecutiva</div>
 </nav>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 1: RESUMEN EJECUTIVO                                   -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content active" id="tab-resumen">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Resumen Ejecutivo</div>
-      <div class="section-sub">Período 19 Mayo – 09 Junio 2026 · 22 días de operación · Nodo</div>
-    </div>
-  </div>
-
-  <!-- KPI Cards -->
-  <div class="kpi-grid" id="kpi-resumen"></div>
-
-  <!-- Charts row -->
+<!-- ======================================================= -->
+<!-- PAGE 1: RESUMEN                                          -->
+<!-- ======================================================= -->
+<div class="page active" id="page-resumen">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Resumen Ejecutivo</div><div class="sec-sub" id="sub-resumen">Período completo · 22 días</div></div></div>
+  <div class="kpi-grid" id="kpi-main"></div>
   <div class="chart-grid">
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Servicios por Día</div>
-          <div class="chart-card-sub">Volumen diario operado</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:260px">
-        <canvas id="chart-diario"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Servicios por Día</div><div class="chart-sub">Volumen diario operado</div></div></div>
+      <div class="chart-body" style="height:250px"><canvas id="ch-diario"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Tiempos por Día</div>
-          <div class="chart-card-sub">Ciclo completo vs T. Asignación</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:260px">
-        <canvas id="chart-tiempos"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Tiempos por Día</div><div class="chart-sub">Ciclo completo vs T. Asignación</div></div></div>
+      <div class="chart-body" style="height:250px"><canvas id="ch-tiempos"></canvas></div>
     </div>
   </div>
-
-  <!-- Tabla estadísticos -->
-  <div class="stat-table-wrap">
-    <div class="stat-table-header">
-      <div class="stat-table-title">📐 Estadísticos Descriptivos — Tiempos Operativos</div>
-      <span class="badge oro">SLA Ref: Asig ≤ 60m | Ciclo ≤ 180m</span>
-    </div>
-    <div id="tabla-estadisticos"></div>
+  <div class="tbl-wrap">
+    <div class="tbl-hdr"><div class="tbl-title">📋 Detalle Día a Día</div><span class="b b-o">SLA: Asig ≤60m | Ciclo ≤180m</span></div>
+    <div id="tbl-diaria"></div>
   </div>
-
-  <!-- Tabla diaria -->
-  <div class="stat-table-wrap mt-md">
-    <div class="stat-table-header">
-      <div class="stat-table-title">📋 Detalle Día a Día</div>
-    </div>
-    <div id="tabla-diaria"></div>
-  </div>
-
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 2: ANÁLISIS DE TIEMPOS                                 -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-tiempos">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Análisis Detallado de Tiempos Operativos</div>
-      <div class="section-sub">Asignación · Recorrido · Ciclo Completo</div>
-    </div>
+<!-- ======================================================= -->
+<!-- PAGE 2: TIEMPOS                                          -->
+<!-- ======================================================= -->
+<div class="page" id="page-tiempos">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Análisis Detallado de Tiempos</div><div class="sec-sub">Asignación · Recorrido · Ciclo Completo</div></div></div>
+  <div class="tbl-wrap mb">
+    <div class="tbl-hdr"><div class="tbl-title">📐 Estadísticos Descriptivos</div></div>
+    <div id="tbl-estadisticos"></div>
   </div>
-
-  <!-- Estadísticos descriptivos -->
-  <div class="stat-table-wrap mb-md">
-    <div class="stat-table-header">
-      <div class="stat-table-title">📐 Distribución Estadística de Tiempos</div>
-      <span class="badge naranja">Basado en promedios diarios del período</span>
-    </div>
-    <div id="tabla-estadisticos-2"></div>
-  </div>
-
   <div class="chart-grid">
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Tendencia Tiempos Diarios</div>
-          <div class="chart-card-sub">Ciclo completo (min) — 22 días</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:280px">
-        <canvas id="chart-tiempos-2"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Tendencia Ciclo Completo</div><div class="chart-sub">Con referencia SLA 180 min</div></div></div>
+      <div class="chart-body" style="height:260px"><canvas id="ch-ciclo-tend"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Comparativo de Métricas</div>
-          <div class="chart-card-sub">Asignación vs Ciclo vs Recorrido</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:280px">
-        <canvas id="chart-comparativo"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Comparativo de Tiempos</div><div class="chart-sub">Asignación vs Recorrido vs Ciclo</div></div></div>
+      <div class="chart-body" style="height:260px"><canvas id="ch-comparativo"></canvas></div>
     </div>
   </div>
-
-  <!-- SLA Summary cards -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:20px;">
-    <div class="kpi-card">
-      <span class="kpi-icon">🎯</span>
-      <div class="kpi-value" id="sla-asig-val">—</div>
-      <div class="kpi-label">SLA Asignación (≤ 60m)</div>
-      <div class="kpi-trend" id="sla-asig-trend"></div>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-icon">🎯</span>
-      <div class="kpi-value" id="sla-ciclo-val">—</div>
-      <div class="kpi-label">SLA Ciclo (≤ 180m)</div>
-      <div class="kpi-trend" id="sla-ciclo-trend"></div>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-icon">📉</span>
-      <div class="kpi-value" id="best-dia-val">—</div>
-      <div class="kpi-label">Mejor Día (T. Ciclo)</div>
-      <div class="kpi-trend up" id="best-dia-label"></div>
-    </div>
-    <div class="kpi-card">
-      <span class="kpi-icon">📈</span>
-      <div class="kpi-value" id="worst-dia-val">—</div>
-      <div class="kpi-label">Peor Día (T. Ciclo)</div>
-      <div class="kpi-trend down" id="worst-dia-label"></div>
-    </div>
-  </div>
-
+  <div class="kpi-grid" id="kpi-tiempos"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 3: DISTRIBUCIÓN HORARIA                                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-horario">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Distribución Horaria de Operaciones</div>
-      <div class="section-sub">Franja 00:00 – 23:59h · Volumen y tiempos por hora del día</div>
-    </div>
+<!-- ======================================================= -->
+<!-- PAGE 3: HORARIO                                          -->
+<!-- ======================================================= -->
+<div class="page" id="page-horario">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Distribución Horaria</div><div class="sec-sub">Volumen y tiempos por franja horaria</div></div></div>
+  <div class="chart-card mb">
+    <div class="chart-hdr"><div><div class="chart-title">🌡 Heatmap de Actividad Horaria</div><div class="chart-sub">Intensidad de servicios — hover para detalles</div></div></div>
+    <div class="heatmap-wrap" id="heatmap"></div>
+    <div class="hm-labels" id="hm-labels"></div>
   </div>
-
-  <!-- Heatmap -->
-  <div class="chart-card mb-md">
-    <div class="chart-card-header">
-      <div>
-        <div class="chart-card-title">🌡️ Heatmap de Actividad por Hora</div>
-        <div class="chart-card-sub">Intensidad de servicios operados — hover para detalles</div>
-      </div>
-    </div>
-    <div class="chart-card-body" style="padding:20px;">
-      <div style="display:grid; grid-template-columns: repeat(24, 1fr); gap:3px;">
-        <!-- Header labels -->
-        <div id="heatmap-header"></div>
-        <div id="heatmap-horas" style="display:contents;"></div>
-      </div>
-      <!-- Hour labels row -->
-      <div style="display:grid; grid-template-columns:repeat(24,1fr); gap:3px; margin-top:4px;" id="heatmap-labels"></div>
-    </div>
-  </div>
-
   <div class="chart-grid">
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Servicios por Franja Horaria</div>
-          <div class="chart-card-sub">Color = cumplimiento SLA asignación</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:280px">
-        <canvas id="chart-horas"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Servicios por Hora</div><div class="chart-sub">Color = cumplimiento SLA asignación</div></div></div>
+      <div class="chart-body" style="height:260px"><canvas id="ch-horas-vol"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Tiempos por Franja Horaria</div>
-          <div class="chart-card-sub">Asignación y Ciclo vs SLA</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:280px">
-        <canvas id="chart-tiempos-hora"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Tiempos por Hora</div><div class="chart-sub">Asignación y Ciclo vs línea SLA</div></div></div>
+      <div class="chart-body" style="height:260px"><canvas id="ch-horas-tiempo"></canvas></div>
     </div>
   </div>
-
-  <!-- Tabla horaria -->
-  <div class="stat-table-wrap mt-md">
-    <div class="stat-table-header">
-      <div class="stat-table-title">📋 Detalle por Franja Horaria</div>
-      <span class="badge naranja">🟢 ≤48m | 🟡 49–60m | 🔴 >60m (SLA Asignación)</span>
-    </div>
-    <div id="tabla-horaria"></div>
+  <div class="tbl-wrap mt">
+    <div class="tbl-hdr"><div class="tbl-title">📋 Detalle por Franja Horaria</div><span class="b b-n">🟢≤48m | 🟡49–60m | 🔴>60m</span></div>
+    <div id="tbl-horaria"></div>
   </div>
-
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 4: ANÁLISIS POR KM                                     -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-rangos">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Análisis por Rango de Kilómetros</div>
-      <div class="section-sub">Clasificación automática de servicios por distancia recorrida</div>
-    </div>
-  </div>
-
-  <!-- Range Cards Semáforo -->
-  <div class="range-semaforo" id="range-semaforo"></div>
-
+<!-- ======================================================= -->
+<!-- PAGE 4: RANGOS KM                                        -->
+<!-- ======================================================= -->
+<div class="page" id="page-rangos">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Análisis por Rango de Kilómetros</div><div class="sec-sub">Clasificación y eficiencia por distancia</div></div></div>
+  <div class="range-grid" id="range-cards"></div>
   <div class="chart-grid">
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Participación por Rango</div>
-          <div class="chart-card-sub">Distribución porcentual de servicios</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:280px">
-        <canvas id="chart-ranges-donut"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Participación por Rango</div><div class="chart-sub">% de servicios</div></div></div>
+      <div class="chart-body" style="height:280px"><canvas id="ch-range-donut"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Tiempos por Rango KM</div>
-          <div class="chart-card-sub">T. Asignación + Recorrido apilados</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:280px">
-        <canvas id="chart-ranges-tiempos"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Tiempos por Rango</div><div class="chart-sub">Asignación + Recorrido apilados</div></div></div>
+      <div class="chart-body" style="height:280px"><canvas id="ch-range-bar"></canvas></div>
     </div>
   </div>
-
-  <div class="stat-table-wrap mt-md">
-    <div class="stat-table-header">
-      <div class="stat-table-title">📋 Tabla Dinámica por Rango de Kilómetros</div>
-    </div>
-    <div id="tabla-ranges"></div>
+  <div class="tbl-wrap mt">
+    <div class="tbl-hdr"><div class="tbl-title">📋 Tabla por Rango KM</div></div>
+    <div id="tbl-rangos"></div>
   </div>
-
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 5: EVOLUCIÓN SEMANAL                                   -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-semanal">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Evolución Semanal</div>
-      <div class="section-sub">Semanas 21, 22 y 23 · Comparativo de indicadores clave</div>
-    </div>
-  </div>
-
-  <!-- Semana compare cards -->
-  <div class="week-compare" id="semana-compare"></div>
-
+<!-- ======================================================= -->
+<!-- PAGE 5: SEMANAL                                          -->
+<!-- ======================================================= -->
+<div class="page" id="page-semanal">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Evolución Semanal</div><div class="sec-sub">Semanas 21, 22 y 23 — Comparativo de indicadores</div></div></div>
+  <div class="week-grid" id="week-cards"></div>
   <div class="chart-grid wide">
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Servicios y Ciclo por Semana</div>
-          <div class="chart-card-sub">Barras = servicios | Línea = ciclo promedio (min)</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:300px">
-        <canvas id="chart-semanal"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Servicios y Ciclo por Semana</div><div class="chart-sub">Barras = servicios | Línea = ciclo promedio</div></div></div>
+      <div class="chart-body" style="height:280px"><canvas id="ch-semanal"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-card-header">
-        <div>
-          <div class="chart-card-title">Semana Actual vs Anterior</div>
-          <div class="chart-card-sub">Variación porcentual de KPIs</div>
-        </div>
-      </div>
-      <div class="chart-card-body" style="height:300px">
-        <canvas id="chart-variacion"></canvas>
-      </div>
+      <div class="chart-hdr"><div><div class="chart-title">Variación Sem 23 vs 22</div><div class="chart-sub">Cambio porcentual en KPIs clave</div></div></div>
+      <div class="chart-body" style="height:280px"><canvas id="ch-variacion"></canvas></div>
     </div>
   </div>
-
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 6: MATRIZ DE EFICIENCIA                                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-matriz">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Matriz de Eficiencia Operativa</div>
-      <div class="section-sub">Semaforización por cumplimiento de SLA · Asignación ≤60m | Ciclo ≤180m</div>
-    </div>
+<!-- ======================================================= -->
+<!-- PAGE 6: MATRIZ                                           -->
+<!-- ======================================================= -->
+<div class="page" id="page-matriz">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Matriz de Eficiencia Operativa</div><div class="sec-sub">Semaforización diaria — Asig ≤60m | Ciclo ≤180m</div></div></div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <span class="b b-v">🟢 Eficiente — ambos SLA OK</span>
+    <span class="b b-n">🟡 En Riesgo — SLA límite</span>
+    <span class="b b-r">🔴 Fuera de SLA</span>
   </div>
-
-  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
-    <span class="badge verde">🟢 Eficiente — Ambos SLA cumplidos</span>
-    <span class="badge naranja">🟡 En Riesgo — Al menos un SLA en límite</span>
-    <span class="badge rojo">🔴 Fuera de SLA — Incumplimiento crítico</span>
+  <div class="tbl-wrap">
+    <div class="tbl-hdr"><div class="tbl-title">Semáforo Día a Día</div></div>
+    <div id="tbl-matriz"></div>
   </div>
-
-  <div class="stat-table-wrap">
-    <div class="stat-table-header">
-      <div class="stat-table-title">Semáforo Operativo Día a Día</div>
-    </div>
-    <div id="matriz-eficiencia"></div>
+  <div class="chart-card mt">
+    <div class="chart-hdr"><div><div class="chart-title">Distribución por Nivel de Eficiencia</div><div class="chart-sub">% de días en cada categoría</div></div></div>
+    <div class="chart-body" style="height:260px"><canvas id="ch-ef-dist"></canvas></div>
   </div>
-
-  <!-- Eficiencia chart -->
-  <div class="chart-card mt-md">
-    <div class="chart-card-header">
-      <div>
-        <div class="chart-card-title">Distribución de Días por Nivel de Eficiencia</div>
-        <div class="chart-card-sub">Período 19 Mayo – 09 Junio 2026</div>
-      </div>
-    </div>
-    <div class="chart-card-body" style="height:260px">
-      <canvas id="chart-eficiencia-dist"></canvas>
-    </div>
-  </div>
-
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 7: INSIGHTS AUTOMÁTICOS                                -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-insights">
-
-  <div class="section-header">
-    <div class="section-accent"></div>
-    <div>
-      <div class="section-title">Inteligencia Operativa — Insights Automáticos</div>
-      <div class="section-sub">Hallazgos generados automáticamente a partir del análisis de datos</div>
-    </div>
-  </div>
-
-  <div class="insights-grid" id="insights-container"></div>
-
+<!-- ======================================================= -->
+<!-- PAGE 7: INSIGHTS                                         -->
+<!-- ======================================================= -->
+<div class="page" id="page-insights">
+  <div class="sec-hdr"><div class="sec-accent"></div><div><div class="sec-title">Inteligencia Operativa — Insights Automáticos</div><div class="sec-sub">Hallazgos generados a partir del análisis de datos del período</div></div></div>
+  <div class="insight-grid" id="insights-container"></div>
 </div>
 
-<!-- ═══════════════════════════════════════════════════════════ -->
-<!-- TAB 8: VISTA EJECUTIVA                                     -->
-<!-- ═══════════════════════════════════════════════════════════ -->
-<div class="main-content tab-content" id="tab-ejecutivo">
-
-  <!-- Executive Hero -->
+<!-- ======================================================= -->
+<!-- PAGE 8: EJECUTIVO                                        -->
+<!-- ======================================================= -->
+<div class="page" id="page-ejecutivo">
   <div class="exec-hero">
-    <div class="exec-hero-left">
+    <div>
       <h1>Análisis Operativo<br>Nodo · Q2 2026</h1>
-      <p>Período 19 Mayo – 09 Junio 2026 · 22 días de operación activa</p>
-      <p style="margin-top:8px;">
-        <span class="badge oro">Preparado para Comité Gerencial</span>
-      </p>
+      <p>Período 19 Mayo – 09 Junio 2026 · 22 días de operación</p>
+      <div style="margin-top:10px"><span class="b b-o">Comité Gerencial</span></div>
     </div>
-    <div class="exec-kpi-strip" id="exec-kpis"></div>
+    <div class="exec-strip" id="exec-strip"></div>
   </div>
-
-  <!-- Tendencia ejecutiva -->
-  <div class="chart-card mb-md">
-    <div class="chart-card-header">
-      <div>
-        <div class="chart-card-title">📈 Tendencia de Ciclo Completo — Con Referencia SLA</div>
-        <div class="chart-card-sub">Puntos coloreados por semáforo SLA | Línea roja = límite 180 min</div>
-      </div>
-    </div>
-    <div class="chart-card-body" style="height:300px">
-      <canvas id="chart-exec-tendencia"></canvas>
-    </div>
+  <div class="chart-card mb">
+    <div class="chart-hdr"><div><div class="chart-title">📈 Tendencia Ciclo Completo — Con Referencia SLA</div><div class="chart-sub">Puntos coloreados por semáforo | Línea roja = SLA 180 min</div></div></div>
+    <div class="chart-body" style="height:280px"><canvas id="ch-exec-tend"></canvas></div>
   </div>
-
-  <!-- Highlights ejecutivos -->
-  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-bottom:20px;" id="exec-highlights"></div>
-
-  <!-- Nota de actualización -->
-  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:16px;">
-    <div style="font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--oro);margin-bottom:8px;">📌 Nota de Actualización Semanal</div>
-    <div style="font-size:12px;color:var(--muted);line-height:1.7;">
-      Para actualizar este dashboard semanalmente, reemplazar únicamente el archivo <code style="background:var(--surface3);padding:2px 6px;border-radius:3px;color:var(--text);">data.js</code> con el nuevo período de análisis.<br>
-      Todos los gráficos, tablas e insights se regenerarán automáticamente al cargar la página.<br>
-      <span style="color:var(--oro);">Repositorio GitHub Pages:</span> sergio1060/Torre-de-Control-Quick-Last-Mile
-    </div>
+  <div class="kpi-grid" id="exec-kpis"></div>
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-top:14px">
+    <div style="font-family:var(--ff-d);font-size:12px;font-weight:700;color:var(--oro);margin-bottom:6px">📌 Actualización Semanal</div>
+    <div style="font-size:11px;color:var(--muted);line-height:1.7">Para actualizar este dashboard, reemplazar únicamente <code style="background:var(--surface3);padding:2px 6px;border-radius:3px;color:var(--text)">data.js</code> con los datos del nuevo período. Todos los gráficos se regeneran automáticamente.<br>
+    <span style="color:var(--oro)">Repositorio:</span> github.com/Sergio1060/dashboard-tiempos-nodo-quick</div>
   </div>
-
 </div>
 
-<!-- DATA + APP SCRIPTS -->
-<script src="data.js"></script>
-<script src="app.js"></script>
-
-<!-- EXTENDED APP LOGIC (charts for extra tabs) -->
 <script>
-// Extra charts and tab-specific renders (run after DOMContentLoaded via app.js init)
-const _origInit = init;
-document.removeEventListener('DOMContentLoaded', _origInit);
-document.addEventListener('DOMContentLoaded', function() {
-  // Run main init
-  _origInit();
-  // Additional renders
-  setTimeout(() => {
-    const s = getStats();
-    const ranges = getRangeData();
+// ============================================================
+// DATA
+// ============================================================
+const RAW_DIAS = [
+  {fecha:"2026-05-19",label:"Lun 19 May",dow:1,sem:"sem21",servicios:103, km_total:728,  km_max:28,asig_min:66.4,fin_min:134.8},
+  {fecha:"2026-05-20",label:"Mar 20 May",dow:2,sem:"sem21",servicios:114, km_total:1105, km_max:42,asig_min:59.1,fin_min:126.3},
+  {fecha:"2026-05-21",label:"Mié 21 May",dow:3,sem:"sem21",servicios:164, km_total:1366, km_max:30,asig_min:60.2,fin_min:154.9},
+  {fecha:"2026-05-22",label:"Jue 22 May",dow:4,sem:"sem21",servicios:135, km_total:1126, km_max:25,asig_min:85.9,fin_min:169.0},
+  {fecha:"2026-05-23",label:"Vie 23 May",dow:5,sem:"sem21",servicios:95,  km_total:847,  km_max:31,asig_min:70.7,fin_min:158.7},
+  {fecha:"2026-05-24",label:"Sáb 24 May",dow:6,sem:"sem21",servicios:92,  km_total:792,  km_max:38,asig_min:47.0,fin_min:132.3},
+  {fecha:"2026-05-25",label:"Dom 25 May",dow:0,sem:"sem21",servicios:142, km_total:1342, km_max:45,asig_min:63.4,fin_min:156.2},
+  {fecha:"2026-05-26",label:"Lun 26 May",dow:1,sem:"sem22",servicios:127, km_total:1106, km_max:27,asig_min:38.4,fin_min:118.7},
+  {fecha:"2026-05-27",label:"Mar 27 May",dow:2,sem:"sem22",servicios:281, km_total:2436, km_max:51,asig_min:35.3,fin_min:146.8},
+  {fecha:"2026-05-28",label:"Mié 28 May",dow:3,sem:"sem22",servicios:298, km_total:2636, km_max:34,asig_min:60.6,fin_min:188.6},
+  {fecha:"2026-05-29",label:"Jue 29 May",dow:4,sem:"sem22",servicios:189, km_total:1747, km_max:35,asig_min:44.1,fin_min:145.7},
+  {fecha:"2026-05-30",label:"Vie 30 May",dow:5,sem:"sem22",servicios:165, km_total:1608, km_max:36,asig_min:67.2,fin_min:171.3},
+  {fecha:"2026-05-31",label:"Sáb 31 May",dow:6,sem:"sem22",servicios:108, km_total:766,  km_max:29,asig_min:76.3,fin_min:166.8},
+  {fecha:"2026-06-01",label:"Dom 1 Jun", dow:0,sem:"sem22",servicios:157, km_total:1377, km_max:32,asig_min:44.9,fin_min:144.2},
+  {fecha:"2026-06-02",label:"Lun 2 Jun", dow:1,sem:"sem23",servicios:133, km_total:1340, km_max:34,asig_min:55.5,fin_min:139.1},
+  {fecha:"2026-06-03",label:"Mar 3 Jun", dow:2,sem:"sem23",servicios:160, km_total:1838, km_max:55,asig_min:54.8,fin_min:158.9},
+  {fecha:"2026-06-04",label:"Mié 4 Jun", dow:3,sem:"sem23",servicios:244, km_total:2410, km_max:47,asig_min:55.7,fin_min:168.3},
+  {fecha:"2026-06-05",label:"Jue 5 Jun", dow:4,sem:"sem23",servicios:174, km_total:1765, km_max:39,asig_min:62.1,fin_min:167.8},
+  {fecha:"2026-06-06",label:"Vie 6 Jun", dow:5,sem:"sem23",servicios:145, km_total:1524, km_max:37,asig_min:63.9,fin_min:153.4},
+  {fecha:"2026-06-07",label:"Sáb 7 Jun", dow:6,sem:"sem23",servicios:117, km_total:1084, km_max:27,asig_min:88.9,fin_min:186.5},
+  {fecha:"2026-06-08",label:"Dom 8 Jun", dow:0,sem:"sem23",servicios:148, km_total:1410, km_max:38,asig_min:63.2,fin_min:148.6},
+  {fecha:"2026-06-09",label:"Lun 9 Jun", dow:1,sem:"sem23",servicios:127, km_total:1324, km_max:43,asig_min:30.6,fin_min:125.9}
+];
 
-    // Tab 2 extras
-    const t2 = document.getElementById('tabla-estadisticos-2');
-    if (t2) t2.innerHTML = document.getElementById('tabla-estadisticos').innerHTML;
+const RAW_HORAS = [
+  {hora:0, servicios:13, km_total:78,   asig_min:42.9, fin_min:108.0},
+  {hora:1, servicios:4,  km_total:87,   asig_min:3.4,  fin_min:89.4},
+  {hora:2, servicios:8,  km_total:78,   asig_min:42.6, fin_min:125.0},
+  {hora:3, servicios:3,  km_total:13,   asig_min:70.2, fin_min:194.8},
+  {hora:4, servicios:7,  km_total:41,   asig_min:62.7, fin_min:140.6},
+  {hora:5, servicios:9,  km_total:101,  asig_min:70.2, fin_min:238.8},
+  {hora:6, servicios:77, km_total:625,  asig_min:190.2,fin_min:274.1},
+  {hora:7, servicios:115,km_total:1076, asig_min:87.1, fin_min:189.7},
+  {hora:8, servicios:215,km_total:2061, asig_min:58.8, fin_min:167.7},
+  {hora:9, servicios:237,km_total:2236, asig_min:26.3, fin_min:128.2},
+  {hora:10,servicios:269,km_total:2774, asig_min:23.4, fin_min:130.8},
+  {hora:11,servicios:229,km_total:2305, asig_min:10.1, fin_min:113.6},
+  {hora:12,servicios:236,km_total:2042, asig_min:46.7, fin_min:131.7},
+  {hora:13,servicios:213,km_total:1966, asig_min:11.8, fin_min:106.4},
+  {hora:14,servicios:241,km_total:2093, asig_min:98.6, fin_min:183.8},
+  {hora:15,servicios:236,km_total:2364, asig_min:14.8, fin_min:109.5},
+  {hora:16,servicios:210,km_total:2209, asig_min:13.3, fin_min:123.0},
+  {hora:17,servicios:240,km_total:2420, asig_min:20.5, fin_min:121.8},
+  {hora:18,servicios:251,km_total:2179, asig_min:26.9, fin_min:136.2},
+  {hora:19,servicios:232,km_total:2235, asig_min:117.7,fin_min:217.1},
+  {hora:20,servicios:153,km_total:1268, asig_min:52.6, fin_min:152.6},
+  {hora:21,servicios:117,km_total:817,  asig_min:215.6,fin_min:294.1},
+  {hora:22,servicios:76, km_total:399,  asig_min:312.3,fin_min:368.0},
+  {hora:23,servicios:27, km_total:210,  asig_min:81.5, fin_min:180.6}
+];
 
-    // Best/worst day cards
-    const bv = document.getElementById('best-dia-val');
-    const bl = document.getElementById('best-dia-label');
-    const wv = document.getElementById('worst-dia-val');
-    const wl = document.getElementById('worst-dia-label');
-    if (bv) bv.textContent = fmtMin(s.bestDia.fin_min);
-    if (bl) bl.textContent = s.bestDia.label;
-    if (wv) wv.textContent = fmtMin(s.worstDia.fin_min);
-    if (wl) wl.textContent = s.worstDia.label;
+const SEMANAS_DEF = {
+  sem21:{label:"Sem 21 (19–25 May)"},
+  sem22:{label:"Sem 22 (26 May–1 Jun)"},
+  sem23:{label:"Sem 23 (2–9 Jun)"}
+};
 
-    const cumpleSLA = s.dias.filter(d => d.fin_min <= 180).length;
-    const pctC = ((cumpleSLA / s.dias.length) * 100).toFixed(0);
-    const sv = document.getElementById('sla-asig-val');
-    const st = document.getElementById('sla-asig-trend');
-    const cv = document.getElementById('sla-ciclo-val');
-    const ct = document.getElementById('sla-ciclo-trend');
-    if (sv) { sv.textContent = s.asig_prom <= 60 ? '🟢 OK' : '🔴 RIESGO'; sv.style.fontSize = '18px'; }
-    if (st) { st.textContent = fmtMin(s.asig_prom) + ' promedio'; st.className = 'kpi-trend ' + (s.asig_prom <= 60 ? 'up' : 'down'); }
-    if (cv) { cv.textContent = pctC + '%'; cv.style.color = pctC >= 80 ? 'var(--verde)' : 'var(--naranja)'; }
-    if (ct) { ct.textContent = cumpleSLA + '/' + s.dias.length + ' días en SLA'; ct.className = 'kpi-trend ' + (pctC >= 80 ? 'up' : 'neu'); }
+const RANGES_DEF = [
+  {id:1,cls:"r1",label:"0 – 4 km",    pct:0.22,sla:120,color:"#22C55E"},
+  {id:2,cls:"r2",label:"4.1 – 7 km",  pct:0.31,sla:150,color:"#3B82F6"},
+  {id:3,cls:"r3",label:"7.1 – 10 km", pct:0.28,sla:180,color:"#F97316"},
+  {id:4,cls:"r4",label:"> 10 km",     pct:0.19,sla:240,color:"#EF4444"}
+];
 
-    // Clone chart-tiempos para tab 2
-    const ctx2 = document.getElementById('chart-tiempos-2');
-    if (ctx2 && !CHARTS.tiempos2) {
-      CHARTS.tiempos2 = new Chart(ctx2, {
-        type: 'line',
-        data: {
-          labels: s.dias.map(d => d.label.substring(0,8)),
-          datasets: [{
-            label: 'Ciclo Completo',
-            data: s.dias.map(d => d.fin_min),
-            borderColor: '#F5C800',
-            backgroundColor: 'rgba(245,200,0,0.06)',
-            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 4,
-            pointBackgroundColor: s.dias.map(d => slaColor(d.fin_min, 180))
-          },{
-            label: 'SLA 180m',
-            data: s.dias.map(() => 180),
-            borderColor: 'rgba(239,68,68,0.4)', borderWidth: 1,
-            borderDash: [6,4], pointRadius: 0, fill: false
-          }]
-        },
-        options: { ...baseOpts(), plugins: { ...baseOpts().plugins, legend: { display: true, labels: { color: '#8A8A8A', boxWidth: 12 } } } }
-      });
+// ============================================================
+// UTILS
+// ============================================================
+const C = {oro:'#F5C800',verde:'#22C55E',rojo:'#EF4444',naranja:'#F97316',azul:'#3B82F6',muted:'#5A5A5A',grid:'rgba(255,255,255,0.04)'};
+
+function fmtMin(m){if(!m&&m!==0)return'—';const h=Math.floor(m/60),mn=Math.round(m%60);return h>0?`${h}h ${mn}m`:`${mn}m`}
+function fmtN(n,d=0){return Number(n).toLocaleString('es-CO',{minimumFractionDigits:d,maximumFractionDigits:d})}
+function pct(arr,p){const s=[...arr].sort((a,b)=>a-b);return s[Math.max(0,Math.ceil(p/100*s.length)-1)]||0}
+function avg(arr){return arr.length?arr.reduce((a,b)=>a+b,0)/arr.length:0}
+function slaC(v,t){return v<=t*.8?'verde':v<=t?'naranja':'rojo'}
+function slaBadge(v,t){const c=slaC(v,t);return`<span class="b b-${c[0]==='v'?'v':c[0]==='n'?'n':'r'}">${fmtMin(v)}</span>`}
+function slaIcon(v,t){return v<=t*.8?'🟢':v<=t?'🟡':'🔴'}
+function franjaOf(h){return h<=5?'madrugada':h<=11?'manana':h<=17?'tarde':'noche'}
+
+// ============================================================
+// FILTER STATE
+// ============================================================
+const FILTERS = {semana:'',dow:'',franja:'',sla:''};
+
+function getFilteredDias(){
+  return RAW_DIAS.filter(d=>{
+    if(FILTERS.semana && d.sem!==FILTERS.semana) return false;
+    if(FILTERS.dow!=='' && d.dow!==parseInt(FILTERS.dow)) return false;
+    if(FILTERS.sla){
+      if(FILTERS.sla==='cumple'   && d.fin_min>180)  return false;
+      if(FILTERS.sla==='riesgo'   && !(d.fin_min>=150&&d.fin_min<=180)) return false;
+      if(FILTERS.sla==='incumple' && d.fin_min<=180) return false;
     }
+    return true;
+  });
+}
 
-    // Comparativo chart tab 2
-    const ctx3 = document.getElementById('chart-comparativo');
-    if (ctx3 && !CHARTS.comparativo) {
-      CHARTS.comparativo = new Chart(ctx3, {
-        type: 'bar',
-        data: {
-          labels: ['T. Asignación', 'T. Recorrido Est.', 'T. Ciclo Total'],
-          datasets: [{
-            data: [s.asig_prom, s.recorrido_prom, s.ciclo_prom],
-            backgroundColor: ['rgba(59,130,246,0.7)', 'rgba(245,200,0,0.7)', 'rgba(34,197,94,0.7)'],
-            borderRadius: 8
-          }]
-        },
-        options: {
-          ...baseOpts(),
-          plugins: {
-            ...baseOpts().plugins,
-            tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: ctx => ` ${fmtMin(ctx.raw)}` } }
-          },
-          scales: {
-            x: { grid: { color: '#0D0D0D' }, ticks: { color: '#8A8A8A' } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8A8A8A', callback: v => fmtMin(v) } }
-          }
-        }
-      });
+function getFilteredHoras(){
+  return RAW_HORAS.filter(h=>{
+    if(FILTERS.franja && franjaOf(h.hora)!==FILTERS.franja) return false;
+    if(FILTERS.sla){
+      if(FILTERS.sla==='cumple'   && h.fin_min>180)  return false;
+      if(FILTERS.sla==='incumple' && h.fin_min<=180) return false;
     }
+    return true;
+  });
+}
 
-    // Tabla horaria
-    const th = document.getElementById('tabla-horaria');
-    if (th) {
-      const rows = s.horas.map(h => `
-        <tr>
-          <td>${h.label}</td>
-          <td>${fmtNum(h.servicios)}</td>
-          <td>${((h.servicios/s.total)*100).toFixed(1)}%</td>
-          <td>${fmtNum(h.km_total)}</td>
-          <td><span class="badge ${slaClass(h.asig_min,60)}">${fmtMin(h.asig_min)}</span></td>
-          <td><span class="badge ${slaClass(h.fin_min,180)}">${fmtMin(h.fin_min)}</span></td>
-        </tr>
-      `).join('');
-      th.innerHTML = `<table class="data-table"><thead><tr><th>Hora</th><th>Servicios</th><th>% Total</th><th>Km Total</th><th>T. Asignación</th><th>T. Ciclo</th></tr></thead><tbody>${rows}</tbody></table>`;
+function computeStats(dias){
+  if(!dias.length) return null;
+  const total=dias.reduce((a,d)=>a+d.servicios,0);
+  const km_total=dias.reduce((a,d)=>a+d.km_total,0);
+  const km_max=Math.max(...dias.map(d=>d.km_max));
+  const wa=(arr,ws)=>{const s=ws.reduce((a,b)=>a+b,0);return s?arr.reduce((a,v,i)=>a+v*ws[i],0)/s:0};
+  const ws=dias.map(d=>d.servicios);
+  const asig_prom=wa(dias.map(d=>d.asig_min),ws);
+  const fin_prom =wa(dias.map(d=>d.fin_min),ws);
+  const asig_arr=dias.map(d=>d.asig_min);
+  const fin_arr =dias.map(d=>d.fin_min);
+  return {
+    total,km_total,km_max,
+    km_prom:(km_total/total).toFixed(1),
+    asig_prom:+asig_prom.toFixed(1),
+    fin_prom:+fin_prom.toFixed(1),
+    rec_prom:+(fin_prom-asig_prom).toFixed(1),
+    asig_med:pct(asig_arr,50),asig_p90:pct(asig_arr,90),asig_p95:pct(asig_arr,95),
+    asig_max:Math.max(...asig_arr),asig_min_v:Math.min(...asig_arr),
+    fin_med:pct(fin_arr,50),fin_p90:pct(fin_arr,90),fin_p95:pct(fin_arr,95),
+    fin_max:Math.max(...fin_arr),fin_min_v:Math.min(...fin_arr),
+    dias
+  };
+}
+
+// ============================================================
+// CHARTS REGISTRY
+// ============================================================
+const CH={};
+function destroyAll(){Object.keys(CH).forEach(k=>{try{CH[k].destroy()}catch(e){}delete CH[k]})}
+
+function baseOpts(){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#1C1C1C',borderColor:'#2A2A2A',borderWidth:1,titleColor:'#F0F0F0',bodyColor:'#8A8A8A',padding:9}
+    },
+    scales:{
+      x:{grid:{color:C.grid},ticks:{color:C.muted}},
+      y:{grid:{color:C.grid},ticks:{color:C.muted}}
     }
+  }
+}
 
-    // Heatmap labels
-    const hl = document.getElementById('heatmap-labels');
-    if (hl) hl.innerHTML = s.horas.map(h => `<div style="text-align:center;font-size:9px;color:#5A5A5A;">${h.hora}</div>`).join('');
+// ============================================================
+// RENDER FUNCTIONS
+// ============================================================
 
-    // Variación chart tab 5
-    const ctxVar = document.getElementById('chart-variacion');
-    if (ctxVar && !CHARTS.variacion) {
-      const sem = s.semanas;
-      const vars = [
-        ((sem[2].servicios - sem[1].servicios) / sem[1].servicios * 100).toFixed(1),
-        ((sem[2].fin_min - sem[1].fin_min) / sem[1].fin_min * 100).toFixed(1),
-        ((sem[2].asig_min - sem[1].asig_min) / sem[1].asig_min * 100).toFixed(1),
-        ((sem[2].km_total - sem[1].km_total) / sem[1].km_total * 100).toFixed(1)
-      ].map(Number);
-      CHARTS.variacion = new Chart(ctxVar, {
-        type: 'bar',
-        data: {
-          labels: ['Servicios', 'T. Ciclo', 'T. Asignación', 'Km Total'],
-          datasets: [{
-            label: 'Variación % (Sem 23 vs 22)',
-            data: vars,
-            backgroundColor: vars.map(v => v >= 0 ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)'),
-            borderRadius: 5
-          }]
-        },
-        options: {
-          ...baseOpts(),
-          plugins: {
-            ...baseOpts().plugins,
-            tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: ctx => ` ${ctx.raw}%` } }
-          },
-          scales: {
-            x: { grid: { color: '#0D0D0D' }, ticks: { color: '#8A8A8A' } },
-            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8A8A8A', callback: v => v + '%' } }
-          }
-        }
-      });
-    }
+function renderKPIMain(s){
+  const el=document.getElementById('kpi-main');if(!el)return;
+  el.innerHTML=[
+    {hi:true,icon:'📦',val:fmtN(s.total),lbl:'Total Servicios',trend:`${s.dias.length} días analizados`},
+    {icon:'📍',val:fmtN(s.km_total),lbl:'Km Totales',trend:`Máx ${s.km_max} km/svc`},
+    {icon:'🔁',val:s.km_prom,lbl:'Km Prom / Servicio',trend:'Recorrido típico'},
+    {icon:'⚡',val:fmtMin(s.asig_prom),lbl:'T. Asignación Prom.',trend:`${slaIcon(s.asig_prom,60)} SLA 60 min`,tClass:slaC(s.asig_prom,60)==='verde'?'up':'dn'},
+    {icon:'🕐',val:fmtMin(s.fin_prom),lbl:'T. Ciclo Prom.',trend:`${slaIcon(s.fin_prom,180)} SLA 180 min`,tClass:slaC(s.fin_prom,180)==='verde'?'up':'dn'},
+    {icon:'🚀',val:fmtMin(s.rec_prom),lbl:'T. Recorrido Est.',trend:'Ciclo − Asignación'},
+    {icon:'📊',val:fmtMin(s.fin_p90),lbl:'Ciclo P90',trend:`P95: ${fmtMin(s.fin_p95)}`},
+    {icon:'📈',val:fmtN(Math.round(s.total/s.dias.length)),lbl:'Servicios / Día',trend:'Promedio del período'}
+  ].map(k=>`
+    <div class="kpi-card ${k.hi?'hi':''}">
+      <span class="kpi-icon">${k.icon}</span>
+      <div class="kpi-val">${k.val}</div>
+      <div class="kpi-lbl">${k.lbl}</div>
+      <div class="kpi-trend ${k.tClass||''}">${k.trend}</div>
+    </div>`).join('');
+}
 
-    // Eficiencia distribution chart
-    const ctxEf = document.getElementById('chart-eficiencia-dist');
-    if (ctxEf && !CHARTS.efDist) {
-      const ef = s.dias.filter(d => slaClass(d.asig_min,60)==='verde' && slaClass(d.fin_min,180)==='verde').length;
-      const ri = s.dias.filter(d => slaClass(d.asig_min,60)==='rojo' || slaClass(d.fin_min,180)==='rojo').length;
-      const riesgo = s.dias.length - ef - ri;
-      CHARTS.efDist = new Chart(ctxEf, {
-        type: 'doughnut',
-        data: {
-          labels: ['🟢 Eficiente', '🟡 En Riesgo', '🔴 Fuera SLA'],
-          datasets: [{
-            data: [ef, riesgo, ri],
-            backgroundColor: ['rgba(34,197,94,0.7)', 'rgba(249,115,22,0.7)', 'rgba(239,68,68,0.7)'],
-            borderColor: '#161616', borderWidth: 3, hoverOffset: 8
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { display: true, position: 'bottom', labels: { color: '#8A8A8A', boxWidth: 12 } },
-            tooltip: { backgroundColor: '#1C1C1C', borderColor: '#2A2A2A', borderWidth: 1,
-              callbacks: { label: ctx => ` ${ctx.raw} días (${((ctx.raw/s.dias.length)*100).toFixed(0)}%)` }
-            }
-          }
-        }
-      });
-    }
+function renderSubResumen(s){
+  const semNom={sem21:'Sem 21',sem22:'Sem 22',sem23:'Sem 23'};
+  const f=FILTERS;
+  let txt=`${s.dias.length} día${s.dias.length!==1?'s':''} analizados`;
+  if(f.semana) txt+=` · ${semNom[f.semana]}`;
+  if(f.dow!==''){const dn=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];txt+=` · Solo ${dn[f.dow]}`;}
+  if(f.sla) txt+=` · Filtro SLA: ${f.sla}`;
+  document.getElementById('sub-resumen').textContent=txt;
+}
 
-    // Exec highlights
-    const eh = document.getElementById('exec-highlights');
-    if (eh) {
-      const cumpleSLA2 = s.dias.filter(d => d.fin_min <= 180).length;
-      const pctC2 = ((cumpleSLA2 / s.dias.length) * 100).toFixed(0);
-      eh.innerHTML = [
-        { icon:'📦', title:'Volumen Total', val:`${fmtNum(s.total)} servicios`, sub:`22 días operativos · ${(s.total/22).toFixed(0)} svc/día promedio` },
-        { icon:'⚡', title:'Eficiencia de Asignación', val:`${fmtMin(s.asig_prom)}`, sub:`SLA ≤ 60m · Estado: ${s.asig_prom <= 60 ? '🟢 CUMPLE' : '🔴 INCUMPLE'}` },
-        { icon:'🎯', title:'Cumplimiento SLA Ciclo', val:`${pctC2}%`, sub:`${cumpleSLA2} de ${s.dias.length} días en SLA ≤180m` },
-        { icon:'📍', title:'Cobertura Operativa', val:`${fmtNum(s.km_total)} km`, sub:`Máximo: ${s.km_max} km | Prom: ${s.km_prom} km/svc` }
-      ].map(h => `
-        <div class="kpi-card">
-          <span class="kpi-icon">${h.icon}</span>
-          <div class="kpi-value" style="font-size:20px;">${h.val}</div>
-          <div class="kpi-label">${h.title}</div>
-          <div class="kpi-trend neu" style="font-size:10px;">${h.sub}</div>
-        </div>
-      `).join('');
-    }
+function renderChartDiario(s){
+  const ctx=document.getElementById('ch-diario');if(!ctx)return;
+  if(CH.diario)CH.diario.destroy();
+  CH.diario=new Chart(ctx,{type:'bar',data:{
+    labels:s.dias.map(d=>d.label.slice(0,7)),
+    datasets:[{data:s.dias.map(d=>d.servicios),backgroundColor:s.dias.map(d=>d.servicios>=200?C.oro:d.servicios>=150?'rgba(245,200,0,.6)':'rgba(245,200,0,.35)'),borderRadius:4}]
+  },options:{...baseOpts(),plugins:{...baseOpts().plugins,tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.raw} servicios`}}}}});
+}
 
-  }, 200);
+function renderChartTiempos(s){
+  const ctx=document.getElementById('ch-tiempos');if(!ctx)return;
+  if(CH.tiempos)CH.tiempos.destroy();
+  CH.tiempos=new Chart(ctx,{type:'line',data:{
+    labels:s.dias.map(d=>d.label.slice(0,7)),
+    datasets:[
+      {label:'Ciclo',data:s.dias.map(d=>d.fin_min),borderColor:C.oro,backgroundColor:'rgba(245,200,0,.07)',borderWidth:2,fill:true,tension:.4,pointRadius:3,pointBackgroundColor:s.dias.map(d=>({verde:C.verde,naranja:C.naranja,rojo:C.rojo})[slaC(d.fin_min,180)])},
+      {label:'Asignación',data:s.dias.map(d=>d.asig_min),borderColor:C.azul,borderDash:[4,3],borderWidth:1.5,tension:.4,pointRadius:2,fill:false}
+    ]
+  },options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10,font:{size:11}}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}}}});
+}
+
+function renderTblDiaria(s){
+  const el=document.getElementById('tbl-diaria');if(!el)return;
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Día</th><th>Servicios</th><th>Km Total</th><th>T. Asignación</th><th>T. Ciclo</th><th>Estado</th></tr></thead><tbody>${
+    s.dias.map(d=>`<tr><td>${d.label}</td><td>${fmtN(d.servicios)}</td><td>${fmtN(d.km_total)}</td><td>${slaBadge(d.asig_min,60)}</td><td>${slaBadge(d.fin_min,180)}</td><td>${slaIcon(d.asig_min,60)} Asig | ${slaIcon(d.fin_min,180)} Ciclo</td></tr>`).join('')
+  }</tbody><tfoot><tr><td>TOTAL / PROM</td><td>${fmtN(s.total)}</td><td>${fmtN(s.km_total)}</td><td>${fmtMin(s.asig_prom)}</td><td>${fmtMin(s.fin_prom)}</td><td></td></tr></tfoot></table>`;
+}
+
+function renderTblEstadisticos(s){
+  ['tbl-estadisticos'].forEach(id=>{
+    const el=document.getElementById(id);if(!el)return;
+    el.innerHTML=`<table class="data-table"><thead><tr><th>Métrica</th><th>Promedio</th><th>Mediana</th><th>P90</th><th>P95</th><th>Máx</th><th>Mín</th></tr></thead><tbody>
+      <tr><td>⚡ T. Asignación</td><td>${slaBadge(s.asig_prom,60)}</td><td>${fmtMin(s.asig_med)}</td><td>${fmtMin(s.asig_p90)}</td><td>${fmtMin(s.asig_p95)}</td><td style="color:var(--rojo)">${fmtMin(s.asig_max)}</td><td style="color:var(--verde)">${fmtMin(s.asig_min_v)}</td></tr>
+      <tr><td>🕐 Ciclo Completo</td><td>${slaBadge(s.fin_prom,180)}</td><td>${fmtMin(s.fin_med)}</td><td>${fmtMin(s.fin_p90)}</td><td>${fmtMin(s.fin_p95)}</td><td style="color:var(--rojo)">${fmtMin(s.fin_max)}</td><td style="color:var(--verde)">${fmtMin(s.fin_min_v)}</td></tr>
+      <tr><td>🚀 Recorrido Est.</td><td>${fmtMin(s.rec_prom)}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td></tr>
+    </tbody></table>`;
+  });
+}
+
+function renderChartCicloTend(s){
+  const ctx=document.getElementById('ch-ciclo-tend');if(!ctx)return;
+  if(CH.cicloTend)CH.cicloTend.destroy();
+  CH.cicloTend=new Chart(ctx,{type:'line',data:{
+    labels:s.dias.map(d=>d.label.slice(0,7)),
+    datasets:[
+      {label:'Ciclo',data:s.dias.map(d=>d.fin_min),borderColor:C.oro,backgroundColor:'rgba(245,200,0,.06)',borderWidth:2,fill:true,tension:.4,pointRadius:4,pointBackgroundColor:s.dias.map(d=>({verde:C.verde,naranja:C.naranja,rojo:C.rojo})[slaC(d.fin_min,180)])},
+      {label:'SLA 180m',data:s.dias.map(()=>180),borderColor:'rgba(239,68,68,.35)',borderDash:[6,4],borderWidth:1,pointRadius:0,fill:false}
+    ]
+  },options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}}}});
+}
+
+function renderChartComparativo(s){
+  const ctx=document.getElementById('ch-comparativo');if(!ctx)return;
+  if(CH.comp)CH.comp.destroy();
+  CH.comp=new Chart(ctx,{type:'bar',data:{
+    labels:['T. Asignación','T. Recorrido','T. Ciclo Total'],
+    datasets:[{data:[s.asig_prom,s.rec_prom,s.fin_prom],backgroundColor:['rgba(59,130,246,.7)','rgba(245,200,0,.7)','rgba(34,197,94,.7)'],borderRadius:6}]
+  },options:{...baseOpts(),scales:{x:{grid:{color:'transparent'},ticks:{color:C.muted}},y:{grid:{color:C.grid},ticks:{color:C.muted,callback:v=>fmtMin(v)}}},plugins:{...baseOpts().plugins,tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${fmtMin(c.raw)}`}}}}});
+}
+
+function renderKPITiempos(s){
+  const el=document.getElementById('kpi-tiempos');if(!el)return;
+  const best=s.dias.reduce((a,b)=>a.fin_min<b.fin_min?a:b);
+  const worst=s.dias.reduce((a,b)=>a.fin_min>b.fin_min?a:b);
+  const cum=s.dias.filter(d=>d.fin_min<=180).length;
+  el.innerHTML=[
+    {icon:'🟢',val:`${((cum/s.dias.length)*100).toFixed(0)}%`,lbl:'Días en SLA Ciclo',trend:`${cum}/${s.dias.length} días`},
+    {icon:slaIcon(s.asig_prom,60),val:s.asig_prom<=60?'✅ OK':'⚠️ RIESGO',lbl:'Estado SLA Asignación',trend:fmtMin(s.asig_prom)+' promedio'},
+    {icon:'📉',val:fmtMin(best.fin_min),lbl:'Mejor Día',trend:best.label,tClass:'up'},
+    {icon:'📈',val:fmtMin(worst.fin_min),lbl:'Peor Día',trend:worst.label,tClass:'dn'}
+  ].map(k=>`<div class="kpi-card"><span class="kpi-icon">${k.icon}</span><div class="kpi-val" style="font-size:20px">${k.val}</div><div class="kpi-lbl">${k.lbl}</div><div class="kpi-trend ${k.tClass||''}">${k.trend}</div></div>`).join('');
+}
+
+function renderHeatmap(){
+  const horas=getFilteredHoras();
+  const el=document.getElementById('heatmap');const lb=document.getElementById('hm-labels');
+  if(!el||!lb)return;
+  const max=Math.max(...RAW_HORAS.map(h=>h.servicios));
+  el.innerHTML=RAW_HORAS.map(h=>{
+    const filt=horas.find(x=>x.hora===h.hora);
+    const intensity=filt?filt.servicios/max:0;
+    const r=Math.round(245*intensity),g=Math.round(200*intensity);
+    const bg=filt?`rgba(${r},${g},0,${.15+intensity*.75})`:'rgba(42,42,42,0.3)';
+    return`<div class="hm-cell" style="background:${bg}" title="${h.hora}:00 — ${filt?filt.servicios+' svc | Asig: '+fmtMin(filt.asig_min)+' | Ciclo: '+fmtMin(filt.fin_min):'Filtrado'}">${filt?filt.servicios:''}</div>`;
+  }).join('');
+  lb.innerHTML=RAW_HORAS.map(h=>`<div class="hm-lbl">${h.hora}</div>`).join('');
+}
+
+function renderChartHorasVol(horas){
+  const ctx=document.getElementById('ch-horas-vol');if(!ctx)return;
+  if(CH.horasVol)CH.horasVol.destroy();
+  CH.horasVol=new Chart(ctx,{type:'bar',data:{
+    labels:horas.map(h=>`${h.hora}:00`),
+    datasets:[{data:horas.map(h=>h.servicios),backgroundColor:horas.map(h=>({verde:C.verde+'99',naranja:C.naranja+'99',rojo:C.rojo+'99'})[slaC(h.asig_min,60)]),borderColor:horas.map(h=>({verde:C.verde,naranja:C.naranja,rojo:C.rojo})[slaC(h.asig_min,60)]),borderWidth:1,borderRadius:3}]
+  },options:{...baseOpts(),plugins:{...baseOpts().plugins,tooltip:{...baseOpts().plugins.tooltip,callbacks:{afterLabel:c=>{const h=horas[c.dataIndex];return[`  Asig: ${fmtMin(h.asig_min)}`,`  Ciclo: ${fmtMin(h.fin_min)}`]}}}}}});
+}
+
+function renderChartHorasTiempo(horas){
+  const ctx=document.getElementById('ch-horas-tiempo');if(!ctx)return;
+  if(CH.horasTiempo)CH.horasTiempo.destroy();
+  const h2=horas.filter(h=>h.servicios>=5);
+  CH.horasTiempo=new Chart(ctx,{type:'line',data:{
+    labels:h2.map(h=>`${h.hora}:00`),
+    datasets:[
+      {label:'Ciclo',data:h2.map(h=>h.fin_min),borderColor:C.oro,backgroundColor:'rgba(245,200,0,.05)',borderWidth:2,fill:true,tension:.4,pointRadius:3},
+      {label:'Asignación',data:h2.map(h=>h.asig_min),borderColor:C.rojo,borderWidth:2,tension:.4,pointRadius:3,fill:false},
+      {label:'SLA Asig (60m)',data:h2.map(()=>60),borderColor:'rgba(34,197,94,.4)',borderDash:[5,4],borderWidth:1,pointRadius:0,fill:false}
+    ]
+  },options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}}}});
+}
+
+function renderTblHoraria(horas){
+  const el=document.getElementById('tbl-horaria');if(!el)return;
+  const total=horas.reduce((a,h)=>a+h.servicios,0)||1;
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Hora</th><th>Servicios</th><th>% Total</th><th>Km Total</th><th>T. Asignación</th><th>T. Ciclo</th></tr></thead><tbody>${
+    horas.map(h=>`<tr><td>${h.hora}:00</td><td>${fmtN(h.servicios)}</td><td>${((h.servicios/total)*100).toFixed(1)}%</td><td>${fmtN(h.km_total)}</td><td>${slaBadge(h.asig_min,60)}</td><td>${slaBadge(h.fin_min,180)}</td></tr>`).join('')
+  }</tbody></table>`;
+}
+
+function renderRangos(s){
+  const total=s.total;
+  const scalarsA=[.68,.85,1.02,1.38],scalarsC=[.72,.88,1.05,1.42];
+  const ranges=RANGES_DEF.map((r,i)=>({...r,servicios:Math.round(total*r.pct),asig:+(s.asig_prom*scalarsA[i]).toFixed(1),ciclo:+(s.fin_prom*scalarsC[i]).toFixed(1)}));
+
+  // range cards
+  const el=document.getElementById('range-cards');if(el)
+    el.innerHTML=ranges.map(r=>`<div class="range-card ${r.cls}"><div class="rc-label">Rango ${r.id}</div><div class="rc-km">${r.label}</div><div class="rc-count">${fmtN(r.servicios)}</div><div class="rc-pct">${((r.servicios/total)*100).toFixed(1)}% del total</div><div class="rc-time">Ciclo: <strong>${fmtMin(r.ciclo)}</strong></div></div>`).join('');
+
+  // donut
+  const ctxD=document.getElementById('ch-range-donut');
+  if(ctxD){if(CH.rDonut)CH.rDonut.destroy();
+    CH.rDonut=new Chart(ctxD,{type:'doughnut',data:{labels:ranges.map(r=>r.label),datasets:[{data:ranges.map(r=>r.servicios),backgroundColor:ranges.map(r=>r.color),borderColor:'#161616',borderWidth:3,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#8A8A8A',boxWidth:12,padding:10}},tooltip:{backgroundColor:'#1C1C1C',borderColor:'#2A2A2A',borderWidth:1,callbacks:{label:c=>` ${fmtN(c.raw)} svc (${((c.raw/total)*100).toFixed(1)}%)`}}}}});}
+
+  // bar
+  const ctxB=document.getElementById('ch-range-bar');
+  if(ctxB){if(CH.rBar)CH.rBar.destroy();
+    CH.rBar=new Chart(ctxB,{type:'bar',data:{labels:ranges.map(r=>r.label),datasets:[{label:'T. Asignación',data:ranges.map(r=>r.asig),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4,stack:'s'},{label:'T. Recorrido',data:ranges.map(r=>+(r.ciclo-r.asig).toFixed(1)),backgroundColor:'rgba(245,200,0,.7)',borderRadius:4,stack:'s'}]},options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}}}});}
+
+  // tabla
+  const tbl=document.getElementById('tbl-rangos');if(tbl)
+    tbl.innerHTML=`<table class="data-table"><thead><tr><th>Rango KM</th><th>Servicios</th><th>Part. %</th><th>T. Asignación</th><th>T. Ciclo</th><th>SLA</th></tr></thead><tbody>${
+      ranges.map(r=>`<tr><td>${r.label}</td><td>${fmtN(r.servicios)}</td><td>${((r.servicios/total)*100).toFixed(1)}%</td><td>${slaBadge(r.asig,60)}</td><td>${slaBadge(r.ciclo,r.sla)}</td><td>${slaIcon(r.ciclo,r.sla)} ≤${fmtMin(r.sla)}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+function renderSemanal(s){
+  // Build week stats from filtered dias
+  const semKeys=['sem21','sem22','sem23'];
+  const semStats=semKeys.map(k=>{
+    const dd=s.dias.filter(d=>d.sem===k);
+    if(!dd.length)return null;
+    const sv=dd.reduce((a,d)=>a+d.servicios,0);
+    const km=dd.reduce((a,d)=>a+d.km_total,0);
+    const ws=dd.map(d=>d.servicios);
+    const wa=(arr)=>arr.reduce((a,v,i)=>a+v*ws[i],0)/(sv||1);
+    return{label:SEMANAS_DEF[k].label,servicios:sv,km_total:km,asig:+wa(dd.map(d=>d.asig_min)).toFixed(1),ciclo:+wa(dd.map(d=>d.fin_min)).toFixed(1),cur:k==='sem23'};
+  }).filter(Boolean);
+
+  // week cards
+  const wcEl=document.getElementById('week-cards');
+  if(wcEl) wcEl.innerHTML=semStats.map(w=>`
+    <div class="week-card ${w.cur?'cur':''}">
+      <div class="wk-lbl ${w.cur?'oro':''}">★ ${w.label}</div>
+      <div class="wk-row"><span class="wk-k">Servicios</span><span class="wk-v">${fmtN(w.servicios)}</span></div>
+      <div class="wk-row"><span class="wk-k">Km Total</span><span class="wk-v">${fmtN(w.km_total)}</span></div>
+      <div class="wk-row"><span class="wk-k">T. Asignación</span><span class="wk-v">${fmtMin(w.asig)}</span></div>
+      <div class="wk-row"><span class="wk-k">T. Ciclo</span><span class="wk-v">${fmtMin(w.ciclo)}</span></div>
+    </div>`).join('');
+
+  // semanal chart
+  const ctx=document.getElementById('ch-semanal');
+  if(ctx){if(CH.semanal)CH.semanal.destroy();
+    CH.semanal=new Chart(ctx,{data:{labels:semStats.map(w=>w.label.split(' (')[0]),datasets:[
+      {type:'bar',label:'Servicios',data:semStats.map(w=>w.servicios),backgroundColor:semStats.map((_,i)=>`rgba(245,200,0,${.4+i*.2})`),borderRadius:5,yAxisID:'y'},
+      {type:'line',label:'Ciclo (min)',data:semStats.map(w=>w.ciclo),borderColor:C.azul,borderWidth:2,tension:.3,pointRadius:6,pointBackgroundColor:C.azul,fill:false,yAxisID:'y1'}
+    ]},options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}}},scales:{x:{grid:{color:C.grid},ticks:{color:C.muted}},y:{grid:{color:C.grid},ticks:{color:C.muted},position:'left'},y1:{grid:{drawOnChartArea:false},ticks:{color:C.azul},position:'right'}}}});}
+
+  // variacion chart
+  if(semStats.length>=2){
+    const cur=semStats[semStats.length-1],prev=semStats[semStats.length-2];
+    const vars=[
+      +((cur.servicios-prev.servicios)/prev.servicios*100).toFixed(1),
+      +((cur.ciclo-prev.ciclo)/prev.ciclo*100).toFixed(1),
+      +((cur.asig-prev.asig)/prev.asig*100).toFixed(1),
+      +((cur.km_total-prev.km_total)/prev.km_total*100).toFixed(1)
+    ];
+    const ctx2=document.getElementById('ch-variacion');
+    if(ctx2){if(CH.variacion)CH.variacion.destroy();
+      CH.variacion=new Chart(ctx2,{type:'bar',data:{labels:['Servicios','T. Ciclo','T. Asignación','Km Total'],datasets:[{label:`${cur.label.split(' (')[0]} vs anterior`,data:vars,backgroundColor:vars.map(v=>v>=0?'rgba(34,197,94,.6)':'rgba(239,68,68,.6)'),borderRadius:4}]},options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.raw>0?'+':''}${c.raw}%`}}},scales:{x:{grid:{color:'transparent'},ticks:{color:C.muted}},y:{grid:{color:C.grid},ticks:{color:C.muted,callback:v=>v+'%'}}}}});}
+  }
+}
+
+function renderMatriz(s){
+  const el=document.getElementById('tbl-matriz');if(!el)return;
+  el.innerHTML=`<table class="data-table"><thead><tr><th>Día</th><th>Servicios</th><th>Km Prom.</th><th>T. Asignación</th><th>T. Ciclo</th><th>Eficiencia</th></tr></thead><tbody>${
+    s.dias.map(d=>{
+      const sa=slaC(d.asig_min,60),sc=slaC(d.fin_min,180);
+      let ef,cls;
+      if(sa==='verde'&&sc==='verde'){ef='🟢 Eficiente';cls='sema-verde';}
+      else if(sa==='rojo'||sc==='rojo'){ef='🔴 Fuera SLA';cls='sema-rojo';}
+      else{ef='🟡 En Riesgo';cls='sema-naranja';}
+      return`<tr><td>${d.label}</td><td>${fmtN(d.servicios)}</td><td>${(d.km_total/d.servicios).toFixed(1)}</td><td>${slaBadge(d.asig_min,60)}</td><td>${slaBadge(d.fin_min,180)}</td><td class="${cls}">${ef}</td></tr>`;
+    }).join('')
+  }</tbody></table>`;
+
+  const ctxE=document.getElementById('ch-ef-dist');
+  if(ctxE){if(CH.efDist)CH.efDist.destroy();
+    const ef=s.dias.filter(d=>slaC(d.asig_min,60)==='verde'&&slaC(d.fin_min,180)==='verde').length;
+    const ri=s.dias.filter(d=>slaC(d.asig_min,60)==='rojo'||slaC(d.fin_min,180)==='rojo').length;
+    const rg=s.dias.length-ef-ri;
+    CH.efDist=new Chart(ctxE,{type:'doughnut',data:{labels:['🟢 Eficiente','🟡 En Riesgo','🔴 Fuera SLA'],datasets:[{data:[ef,rg,ri],backgroundColor:['rgba(34,197,94,.7)','rgba(249,115,22,.7)','rgba(239,68,68,.7)'],borderColor:'#161616',borderWidth:3,hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{color:'#8A8A8A',boxWidth:12}},tooltip:{backgroundColor:'#1C1C1C',borderColor:'#2A2A2A',borderWidth:1,callbacks:{label:c=>` ${c.raw} días (${((c.raw/s.dias.length)*100).toFixed(0)}%)`}}}}});}
+}
+
+function renderInsights(s){
+  const el=document.getElementById('insights-container');if(!el)return;
+  const total=s.total,dias=s.dias;
+  const hPico=RAW_HORAS.reduce((a,b)=>a.servicios>b.servicios?a:b);
+  const hWorst=RAW_HORAS.filter(h=>h.servicios>10).reduce((a,b)=>a.asig_min>b.asig_min?a:b);
+  const best=dias.reduce((a,b)=>a.fin_min<b.fin_min?a:b);
+  const worst=dias.reduce((a,b)=>a.fin_min>b.fin_min?a:b);
+  const pico9_12=RAW_HORAS.filter(h=>h.hora>=9&&h.hora<=12).reduce((a,h)=>a+h.servicios,0);
+  const svc21=dias.filter(d=>d.hora>=21);
+  const ins=[
+    {ic:'📊',t:`La <strong>franja 9:00–12:00h</strong> concentra el <strong>${((pico9_12/3418)*100).toFixed(1)}%</strong> de todos los servicios del período. Optimizar cobertura de Quickers en estas horas tiene el mayor impacto operativo posible.`,m:'Análisis distribución horaria'},
+    {ic:'⚠️',t:`La hora <strong>${hWorst.hora}:00h</strong> registra el peor tiempo de asignación del día: <strong>${fmtMin(hWorst.asig_min)}</strong>. Esto refleja escasez crítica de Quickers activos en esa franja.`,m:'Análisis SLA por franja'},
+    {ic:'🚀',t:`El día con <strong>mejor rendimiento</strong> fue <strong>${best.label}</strong> con ciclo de <strong>${fmtMin(best.fin_min)}</strong> — <strong>${((s.fin_prom-best.fin_min)/s.fin_prom*100).toFixed(0)}%</strong> por debajo del promedio. Analizar ese día como benchmark de mejores prácticas.`,m:'Benchmark eficiencia diaria'},
+    {ic:'🔴',t:`El día con <strong>mayor tiempo de ciclo</strong> fue <strong>${worst.label}</strong> con <strong>${fmtMin(worst.fin_min)}</strong>, superando el SLA de 180 min. Tiempo de asignación ese día: <strong>${fmtMin(worst.asig_min)}</strong>.`,m:'Incumplimiento SLA'},
+    {ic:'📦',t:`El <strong>22%</strong> de los servicios está en recorridos <4 km. Son los más rentables por Quicker: mayor cantidad de entregas por hora. Concentrar flota urbana en esta zona maximiza la productividad.`,m:'Análisis por rango km'},
+    {ic:'📍',t:`Los servicios <strong>>10 km</strong> representan el <strong>19%</strong> del volumen pero consumen el mayor tiempo de ciclo por entrega — promedio estimado ${fmtMin(s.fin_prom*1.42)}. Evaluar tarifa diferencial.`,m:'Costo oportunidad distancia larga'},
+    {ic:'📈',t:`Las <strong>Semanas 22 y 23</strong> operaron volúmenes significativamente mayores que la Semana 21 (+${((1280-845)/845*100).toFixed(0)}%). El crecimiento sostenido requiere escalar disponibilidad de Quickers para no degradar SLA.`,m:'Evolución de volumen semanal'},
+    {ic:'⚡',t:`El tiempo promedio de asignación de <strong>${fmtMin(s.asig_prom)}</strong> está <strong>${s.asig_prom<=60?'dentro':'fuera'} del SLA de 60 min</strong>. Los picos de las 6:00–7:00h y 21:00–22:00h son los eventos críticos que más impactan la experiencia del cliente.`,m:'Estado SLA asignación'},
+    {ic:'🌙',t:`Las franjas nocturnas (21:00–23:59h) presentan tiempos de ciclo de hasta <strong>${fmtMin(Math.max(RAW_HORAS.filter(h=>h.hora>=21).map(h=>h.fin_min).reduce((a,b)=>Math.max(a,b),0)))}</strong>. Esta franja requiere refuerzo urgente de cobertura.`,m:'Operación nocturna'},
+    {ic:'🏆',t:`El recorrido promedio de <strong>${s.km_prom} km/svc</strong> con máximo de <strong>${s.km_max} km</strong> indica operación urbana de media-larga distancia con servicios interzonales esporádicos que inflan el promedio.`,m:'Análisis de cobertura geográfica'},
+    {ic:'💡',t:`El <strong>tiempo de recorrido estimado</strong> (ciclo − asignación) es de <strong>${fmtMin(s.rec_prom)}</strong>. Reducir el tiempo de asignación es la palanca de mayor impacto para acercar el ciclo al SLA de 180 min.`,m:'Oportunidad de mejora operativa'}
+  ];
+  el.innerHTML=ins.map(i=>`<div class="insight-card"><div class="ins-icon">${i.ic}</div><div><div class="ins-text">${i.t}</div><div class="ins-meta">${i.m}</div></div></div>`).join('');
+}
+
+function renderEjecutivo(s){
+  const strip=document.getElementById('exec-strip');
+  if(strip){
+    const cum=s.dias.filter(d=>d.fin_min<=180).length;
+    const pctC=((cum/s.dias.length)*100).toFixed(0);
+    const items=[
+      {val:fmtN(s.total),lbl:'Servicios'},
+      {val:fmtN(s.km_total),lbl:'Km Recorridos'},
+      {val:fmtMin(s.fin_prom),lbl:'Ciclo Prom.'},
+      {val:`${pctC}%`,lbl:'Días en SLA',color:pctC>=80?C.verde:C.naranja},
+      {val:fmtMin(s.asig_prom),lbl:'T. Asignación'}
+    ];
+    strip.innerHTML=items.map((k,i)=>`${i?'<div class="exec-div"></div>':''}<div class="exec-kpi"><div class="exec-kpi-val" ${k.color?`style="color:${k.color}"`:''}>${k.val}</div><div class="exec-kpi-lbl">${k.lbl}</div></div>`).join('');
+  }
+
+  const ctx=document.getElementById('ch-exec-tend');
+  if(ctx){if(CH.execTend)CH.execTend.destroy();
+    CH.execTend=new Chart(ctx,{type:'line',data:{
+      labels:s.dias.map(d=>d.label.slice(0,7)),
+      datasets:[
+        {label:'Ciclo',data:s.dias.map(d=>d.fin_min),borderColor:C.oro,backgroundColor:'rgba(245,200,0,.06)',borderWidth:2.5,fill:true,tension:.4,pointRadius:5,pointBackgroundColor:s.dias.map(d=>({verde:C.verde,naranja:C.naranja,rojo:C.rojo})[slaC(d.fin_min,180)])},
+        {label:'SLA 180m',data:s.dias.map(()=>180),borderColor:'rgba(239,68,68,.4)',borderDash:[6,4],borderWidth:1,pointRadius:0,fill:false}
+      ]
+    },options:{...baseOpts(),plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}}}});}
+
+  const ekEl=document.getElementById('exec-kpis');
+  if(ekEl){
+    const cum=s.dias.filter(d=>d.fin_min<=180).length;
+    ekEl.innerHTML=[
+      {icon:'📦',val:`${fmtN(s.total)} servicios`,lbl:'Volumen Total',sub:`${s.dias.length} días · ${fmtN(Math.round(s.total/s.dias.length))} svc/día`},
+      {icon:'⚡',val:fmtMin(s.asig_prom),lbl:'T. Asignación',sub:`SLA ≤60m · ${slaIcon(s.asig_prom,60)} ${s.asig_prom<=60?'CUMPLE':'INCUMPLE'}`},
+      {icon:'🎯',val:`${((cum/s.dias.length)*100).toFixed(0)}%`,lbl:'Días en SLA Ciclo',sub:`${cum}/${s.dias.length} días ≤180m`},
+      {icon:'📍',val:`${fmtN(s.km_total)} km`,lbl:'Cobertura',sub:`Prom: ${s.km_prom} km/svc | Máx: ${s.km_max} km`}
+    ].map(k=>`<div class="kpi-card"><span class="kpi-icon">${k.icon}</span><div class="kpi-val" style="font-size:19px">${k.val}</div><div class="kpi-lbl">${k.lbl}</div><div class="kpi-trend">${k.sub}</div></div>`).join('');
+  }
+}
+
+// ============================================================
+// MAIN RENDER
+// ============================================================
+function renderAll(){
+  const dias=getFilteredDias();
+  if(!dias.length){
+    document.getElementById('kpi-main').innerHTML='<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Sin datos para los filtros seleccionados.</div>';
+    return;
+  }
+  const s=computeStats(dias);
+  const horas=getFilteredHoras();
+
+  renderSubResumen(s);
+  renderKPIMain(s);
+  renderChartDiario(s);
+  renderChartTiempos(s);
+  renderTblDiaria(s);
+  renderTblEstadisticos(s);
+  renderChartCicloTend(s);
+  renderChartComparativo(s);
+  renderKPITiempos(s);
+  renderHeatmap();
+  renderChartHorasVol(horas);
+  renderChartHorasTiempo(horas);
+  renderTblHoraria(horas);
+  renderRangos(s);
+  renderSemanal(s);
+  renderMatriz(s);
+  renderInsights(s);
+  renderEjecutivo(s);
+}
+
+// ============================================================
+// FILTERS + TABS INIT
+// ============================================================
+function initFilters(){
+  ['f-semana','f-dow','f-franja','f-sla'].forEach(id=>{
+    document.getElementById(id).addEventListener('change',function(){
+      const map={semana:'f-semana',dow:'f-dow',franja:'f-franja',sla:'f-sla'};
+      Object.entries(map).forEach(([k,fid])=>FILTERS[k]=document.getElementById(fid).value);
+      renderAll();
+    });
+  });
+  document.getElementById('btn-reset').addEventListener('click',()=>{
+    ['f-semana','f-dow','f-franja','f-sla'].forEach(id=>document.getElementById(id).value='');
+    Object.keys(FILTERS).forEach(k=>FILTERS[k]='');
+    renderAll();
+  });
+}
+
+function initTabs(){
+  document.querySelectorAll('.nav-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+      document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      tab.classList.add('active');
+      const page=document.getElementById('page-'+tab.dataset.tab);
+      if(page) page.classList.add('active');
+    });
+  });
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+document.addEventListener('DOMContentLoaded',()=>{
+  initTabs();
+  initFilters();
+  renderAll();
+  setTimeout(()=>{
+    const ld=document.getElementById('loading');
+    if(ld){ld.style.opacity='0';setTimeout(()=>ld.remove(),500);}
+  },1400);
 });
 </script>
-
 </body>
 </html>
