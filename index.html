@@ -328,54 +328,56 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
 // Sem23: Lun1–Dom7 Jun          | Sem24 parcial: Lun8–Mar9 Jun
 // ============================================================
 const RAW_DIAS = [
-  {fecha:"2026-05-19",label:"Mar 19 May",dow:1,sem:"sem21",servicios:103, km_total:728,  km_max:28,asig_min:66.4,fin_min:134.8},
-  {fecha:"2026-05-20",label:"Mié 20 May",dow:2,sem:"sem21",servicios:114, km_total:1105, km_max:42,asig_min:59.1,fin_min:126.3},
-  {fecha:"2026-05-21",label:"Jue 21 May",dow:3,sem:"sem21",servicios:164, km_total:1366, km_max:30,asig_min:60.2,fin_min:154.9},
-  {fecha:"2026-05-22",label:"Vie 22 May",dow:4,sem:"sem21",servicios:135, km_total:1126, km_max:25,asig_min:85.9,fin_min:169.0},
-  {fecha:"2026-05-23",label:"Sáb 23 May",dow:5,sem:"sem21",servicios:95,  km_total:847,  km_max:31,asig_min:70.7,fin_min:158.7},
-  {fecha:"2026-05-24",label:"Dom 24 May",dow:6,sem:"sem21",servicios:92,  km_total:792,  km_max:38,asig_min:47.0,fin_min:132.3},
-  {fecha:"2026-05-25",label:"Lun 25 May",dow:0,sem:"sem22",servicios:142, km_total:1342, km_max:45,asig_min:63.4,fin_min:156.2},
-  {fecha:"2026-05-26",label:"Mar 26 May",dow:1,sem:"sem22",servicios:127, km_total:1106, km_max:27,asig_min:38.4,fin_min:118.7},
-  {fecha:"2026-05-27",label:"Mié 27 May",dow:2,sem:"sem22",servicios:281, km_total:2436, km_max:51,asig_min:35.3,fin_min:146.8},
-  {fecha:"2026-05-28",label:"Jue 28 May",dow:3,sem:"sem22",servicios:298, km_total:2636, km_max:34,asig_min:60.6,fin_min:188.6},
-  {fecha:"2026-05-29",label:"Vie 29 May",dow:4,sem:"sem22",servicios:189, km_total:1747, km_max:35,asig_min:44.1,fin_min:145.7},
-  {fecha:"2026-05-30",label:"Sáb 30 May",dow:5,sem:"sem22",servicios:165, km_total:1608, km_max:36,asig_min:67.2,fin_min:171.3},
-  {fecha:"2026-05-31",label:"Dom 31 May",dow:6,sem:"sem22",servicios:108, km_total:766,  km_max:29,asig_min:76.3,fin_min:166.8},
-  {fecha:"2026-06-01",label:"Lun 1 Jun", dow:0,sem:"sem23",servicios:157, km_total:1377, km_max:32,asig_min:44.9,fin_min:144.2},
-  {fecha:"2026-06-02",label:"Mar 2 Jun", dow:1,sem:"sem23",servicios:133, km_total:1340, km_max:34,asig_min:55.5,fin_min:139.1},
-  {fecha:"2026-06-03",label:"Mié 3 Jun", dow:2,sem:"sem23",servicios:160, km_total:1838, km_max:55,asig_min:54.8,fin_min:158.9},
-  {fecha:"2026-06-04",label:"Jue 4 Jun", dow:3,sem:"sem23",servicios:244, km_total:2410, km_max:47,asig_min:55.7,fin_min:168.3},
-  {fecha:"2026-06-05",label:"Vie 5 Jun", dow:4,sem:"sem23",servicios:174, km_total:1765, km_max:39,asig_min:62.1,fin_min:167.8},
-  {fecha:"2026-06-06",label:"Sáb 6 Jun", dow:5,sem:"sem23",servicios:145, km_total:1524, km_max:37,asig_min:63.9,fin_min:153.4},
-  {fecha:"2026-06-07",label:"Dom 7 Jun", dow:6,sem:"sem23",servicios:117, km_total:1084, km_max:27,asig_min:88.9,fin_min:186.5},
-  {fecha:"2026-06-08",label:"Lun 8 Jun", dow:0,sem:"sem24",servicios:148, km_total:1410, km_max:38,asig_min:63.2,fin_min:148.6},
-  {fecha:"2026-06-09",label:"Mar 9 Jun", dow:1,sem:"sem24",servicios:127, km_total:1324, km_max:43,asig_min:30.6,fin_min:125.9}
+  // Datos reales extraídos de Data General — servicios Finalizados
+  {fecha:"2026-05-19",label:"Mar 19 May",dow:1,sem:"sem21",servicios:93,  km_total:728,  km_max:28,asig_min:17.4,fin_min:93.2,  r1:34.4,r2:24.7,r3:15.1,r4:25.8},
+  {fecha:"2026-05-20",label:"Mié 20 May",dow:2,sem:"sem21",servicios:104, km_total:1105, km_max:42,asig_min:10.9,fin_min:84.5,  r1:22.1,r2:24.0,r3:13.5,r4:40.4},
+  {fecha:"2026-05-21",label:"Jue 21 May",dow:3,sem:"sem21",servicios:154, km_total:1366, km_max:30,asig_min:37.3,fin_min:138.1, r1:23.4,r2:21.4,r3:23.4,r4:31.8},
+  {fecha:"2026-05-22",label:"Vie 22 May",dow:4,sem:"sem21",servicios:126, km_total:1126, km_max:25,asig_min:50.9,fin_min:140.0, r1:19.0,r2:27.8,r3:19.8,r4:33.3},
+  {fecha:"2026-05-23",label:"Sáb 23 May",dow:5,sem:"sem21",servicios:87,  km_total:847,  km_max:31,asig_min:20.0,fin_min:116.1, r1:24.1,r2:27.6,r3:12.6,r4:35.6},
+  {fecha:"2026-05-24",label:"Dom 24 May",dow:6,sem:"sem21",servicios:82,  km_total:792,  km_max:38,asig_min:31.0,fin_min:124.9, r1:20.7,r2:26.8,r3:18.3,r4:34.1},
+  {fecha:"2026-05-25",label:"Lun 25 May",dow:0,sem:"sem22",servicios:131, km_total:1342, km_max:45,asig_min:22.3,fin_min:122.2, r1:23.7,r2:19.1,r3:18.3,r4:38.9},
+  {fecha:"2026-05-26",label:"Mar 26 May",dow:1,sem:"sem22",servicios:117, km_total:1106, km_max:27,asig_min:6.2, fin_min:92.6,  r1:22.2,r2:23.1,r3:18.8,r4:35.9},
+  {fecha:"2026-05-27",label:"Mié 27 May",dow:2,sem:"sem22",servicios:271, km_total:2436, km_max:51,asig_min:11.8,fin_min:127.4, r1:25.1,r2:26.9,r3:15.5,r4:32.5},
+  {fecha:"2026-05-28",label:"Jue 28 May",dow:3,sem:"sem22",servicios:289, km_total:2636, km_max:34,asig_min:45.1,fin_min:176.9, r1:26.0,r2:21.5,r3:20.4,r4:32.2},
+  {fecha:"2026-05-29",label:"Vie 29 May",dow:4,sem:"sem22",servicios:181, km_total:1747, km_max:35,asig_min:11.5,fin_min:117.6, r1:21.5,r2:24.9,r3:18.2,r4:35.4},
+  {fecha:"2026-05-30",label:"Sáb 30 May",dow:5,sem:"sem22",servicios:156, km_total:1608, km_max:36,asig_min:21.9,fin_min:132.1, r1:15.4,r2:24.4,r3:17.9,r4:42.3},
+  {fecha:"2026-05-31",label:"Dom 31 May",dow:6,sem:"sem22",servicios:102, km_total:766,  km_max:29,asig_min:29.1,fin_min:124.9, r1:28.4,r2:34.3,r3:14.7,r4:22.5},
+  {fecha:"2026-06-01",label:"Lun 1 Jun", dow:0,sem:"sem23",servicios:147, km_total:1377, km_max:32,asig_min:13.6,fin_min:118.7, r1:16.3,r2:30.6,r3:19.0,r4:34.0},
+  {fecha:"2026-06-02",label:"Mar 2 Jun", dow:1,sem:"sem23",servicios:123, km_total:1340, km_max:34,asig_min:11.6,fin_min:101.7, r1:17.9,r2:17.1,r3:17.1,r4:48.0},
+  {fecha:"2026-06-03",label:"Mié 3 Jun", dow:2,sem:"sem23",servicios:151, km_total:1838, km_max:55,asig_min:15.9,fin_min:126.1, r1:11.3,r2:19.9,r3:17.9,r4:51.0},
+  {fecha:"2026-06-04",label:"Jue 4 Jun", dow:3,sem:"sem23",servicios:234, km_total:2410, km_max:47,asig_min:23.9,fin_min:141.3, r1:20.1,r2:28.2,r3:10.7,r4:41.0},
+  {fecha:"2026-06-05",label:"Vie 5 Jun", dow:4,sem:"sem23",servicios:165, km_total:1765, km_max:39,asig_min:12.2,fin_min:123.7, r1:15.2,r2:21.8,r3:20.6,r4:42.4},
+  {fecha:"2026-06-06",label:"Sáb 6 Jun", dow:5,sem:"sem23",servicios:137, km_total:1524, km_max:37,asig_min:15.7,fin_min:110.5, r1:17.5,r2:21.2,r3:19.7,r4:41.6},
+  {fecha:"2026-06-07",label:"Dom 7 Jun", dow:6,sem:"sem23",servicios:111, km_total:1084, km_max:27,asig_min:37.7,fin_min:140.6, r1:21.6,r2:20.7,r3:19.8,r4:37.8},
+  {fecha:"2026-06-08",label:"Lun 8 Jun", dow:0,sem:"sem24",servicios:137, km_total:1410, km_max:38,asig_min:18.5,fin_min:114.0, r1:24.8,r2:19.0,r3:18.2,r4:38.0},
+  {fecha:"2026-06-09",label:"Mar 9 Jun", dow:1,sem:"sem24",servicios:121, km_total:1324, km_max:43,asig_min:13.9,fin_min:123.0, r1:24.0,r2:20.7,r3:9.1, r4:46.3}
 ];
 
 const RAW_HORAS = [
-  {hora:0, servicios:13, km_total:78,   asig_min:42.9, fin_min:108.0},
+  // Datos reales de Data General — servicios Finalizados
+  {hora:0, servicios:13, km_total:78,   asig_min:42.9, fin_min:108.1},
   {hora:1, servicios:4,  km_total:87,   asig_min:3.4,  fin_min:89.4},
   {hora:2, servicios:8,  km_total:78,   asig_min:42.6, fin_min:125.0},
   {hora:3, servicios:3,  km_total:13,   asig_min:70.2, fin_min:194.8},
   {hora:4, servicios:7,  km_total:41,   asig_min:62.7, fin_min:140.6},
   {hora:5, servicios:9,  km_total:101,  asig_min:70.2, fin_min:238.8},
-  {hora:6, servicios:77, km_total:625,  asig_min:190.2,fin_min:274.1},
-  {hora:7, servicios:115,km_total:1076, asig_min:87.1, fin_min:189.7},
-  {hora:8, servicios:215,km_total:2061, asig_min:58.8, fin_min:167.7},
-  {hora:9, servicios:237,km_total:2236, asig_min:26.3, fin_min:128.2},
-  {hora:10,servicios:269,km_total:2774, asig_min:23.4, fin_min:130.8},
-  {hora:11,servicios:229,km_total:2305, asig_min:10.1, fin_min:113.6},
-  {hora:12,servicios:236,km_total:2042, asig_min:46.7, fin_min:131.7},
+  {hora:6, servicios:54, km_total:625,  asig_min:37.4, fin_min:148.4},
+  {hora:7, servicios:99, km_total:1076, asig_min:17.3, fin_min:133.0},
+  {hora:8, servicios:196,km_total:2061, asig_min:18.8, fin_min:137.3},
+  {hora:9, servicios:226,km_total:2236, asig_min:12.4, fin_min:118.7},
+  {hora:10,servicios:257,km_total:2774, asig_min:10.5, fin_min:122.8},
+  {hora:11,servicios:228,km_total:2305, asig_min:10.2, fin_min:113.7},
+  {hora:12,servicios:218,km_total:2042, asig_min:14.5, fin_min:117.9},
   {hora:13,servicios:213,km_total:1966, asig_min:11.8, fin_min:106.4},
-  {hora:14,servicios:241,km_total:2093, asig_min:98.6, fin_min:183.8},
-  {hora:15,servicios:236,km_total:2364, asig_min:14.8, fin_min:109.5},
+  {hora:14,servicios:199,km_total:2093, asig_min:8.0,  fin_min:111.0},
+  {hora:15,servicios:234,km_total:2364, asig_min:9.2,  fin_min:104.5},
   {hora:16,servicios:210,km_total:2209, asig_min:13.3, fin_min:123.0},
-  {hora:17,servicios:240,km_total:2420, asig_min:20.5, fin_min:121.8},
+  {hora:17,servicios:238,km_total:2420, asig_min:20.6, fin_min:122.2},
   {hora:18,servicios:251,km_total:2179, asig_min:26.9, fin_min:136.2},
-  {hora:19,servicios:232,km_total:2235, asig_min:117.7,fin_min:217.1},
+  {hora:19,servicios:218,km_total:2235, asig_min:52.4, fin_min:158.0},
   {hora:20,servicios:153,km_total:1268, asig_min:52.6, fin_min:152.6},
-  {hora:21,servicios:117,km_total:817,  asig_min:215.6,fin_min:294.1},
-  {hora:22,servicios:76, km_total:399,  asig_min:312.3,fin_min:368.0},
+  {hora:21,servicios:102,km_total:817,  asig_min:67.2, fin_min:157.2},
+  {hora:22,servicios:52, km_total:399,  asig_min:33.1, fin_min:114.0},
   {hora:23,servicios:27, km_total:210,  asig_min:81.5, fin_min:180.6}
 ];
 
@@ -387,10 +389,15 @@ const SEMANAS_DEF = {
 };
 
 const RANGES_DEF = [
-  {id:1,cls:"r1",label:"0 – 4 km",   pct:0.22,sla:120,color:"#22C55E"},
-  {id:2,cls:"r2",label:"4.1 – 7 km", pct:0.31,sla:150,color:"#3B82F6"},
-  {id:3,cls:"r3",label:"7.1 – 10 km",pct:0.28,sla:180,color:"#F97316"},
-  {id:4,cls:"r4",label:"> 10 km",    pct:0.19,sla:240,color:"#EF4444"}
+  // Datos reales: distribución, tiempos y SLA calculados desde Data General
+  {id:1,cls:"r1",label:"0 – 4 km",   pct:0.215,sla:120,color:"#22C55E",
+   servicios:691, asig:21.6, ciclo:96.5,  ciclo_med:78.9,  p90:185.7, p95:222.1, pct_sla:89.1},
+  {id:2,cls:"r2",label:"4.1 – 7 km", pct:0.239,sla:150,color:"#3B82F6",
+   servicios:768, asig:21.7, ciclo:112.2, ciclo_med:96.6,  p90:194.3, p95:240.0, pct_sla:87.2},
+  {id:3,cls:"r3",label:"7.1 – 10 km",pct:0.173,sla:180,color:"#F97316",
+   servicios:558, asig:24.0, ciclo:124.4, ciclo_med:114.9, p90:217.0, p95:262.3, pct_sla:82.8},
+  {id:4,cls:"r4",label:"> 10 km",    pct:0.373,sla:240,color:"#EF4444",
+   servicios:1202,asig:22.1, ciclo:154.1, ciclo_med:140.0, p90:256.6, p95:294.6, pct_sla:70.1}
 ];
 
 // ============================================================
@@ -532,25 +539,16 @@ function renderChartTiempos(s) {
 function renderChartKmStack(s) {
   var ctx=document.getElementById('ch-km-stack'); if(!ctx) return;
   if(CH.kmStack) CH.kmStack.destroy();
-  var totalKmProm=31677/3418;
   var dias=s.dias;
-  var basePct=[0.22,0.31,0.28,0.19];
   var colors=['rgba(34,197,94,.75)','rgba(59,130,246,.75)','rgba(249,115,22,.75)','rgba(239,68,68,.75)'];
   var labels=['0–4 km','4.1–7 km','7.1–10km','>10 km'];
-  var rawData=basePct.map(function(bp,ri){
-    return dias.map(function(d){
-      var ratio=(d.km_total/d.servicios)/totalKmProm;
-      var p=bp;
-      if(ri===0) p=p/Math.max(ratio,0.5)*0.85;
-      else if(ri===3) p=p*Math.min(ratio,2)*1.1;
-      return p;
-    });
-  });
-  // normalize each day to 100%
-  dias.forEach(function(_,di){
-    var tot=rawData.reduce(function(a,row){return a+row[di];},0);
-    rawData.forEach(function(row){row[di]=+((row[di]/tot)*100).toFixed(1);});
-  });
+  // Usar porcentajes reales calculados servicio a servicio desde Data General
+  var rawData=[
+    dias.map(function(d){return d.r1;}),
+    dias.map(function(d){return d.r2;}),
+    dias.map(function(d){return d.r3;}),
+    dias.map(function(d){return d.r4;})
+  ];
   CH.kmStack=new Chart(ctx,{type:'bar',data:{
     labels:dias.map(function(d){return d.label.slice(0,7);}),
     datasets:labels.map(function(lbl,i){
@@ -671,16 +669,16 @@ function renderTblHoraria(horas) {
 
 function renderRangos(s) {
   var total=s.total;
-  var scalarsA=[0.68,0.85,1.02,1.38], scalarsC=[0.72,0.88,1.05,1.42];
-  var ranges=RANGES_DEF.map(function(r,i){
+  // Usar datos reales calculados desde Data General
+  var ranges=RANGES_DEF.map(function(r){
     return {id:r.id,cls:r.cls,label:r.label,pct:r.pct,sla:r.sla,color:r.color,
-      servicios:Math.round(total*r.pct),
-      asig:+(s.asig_prom*scalarsA[i]).toFixed(1),
-      ciclo:+(s.fin_prom*scalarsC[i]).toFixed(1)};
+      servicios:r.servicios, asig:r.asig, ciclo:r.ciclo,
+      ciclo_med:r.ciclo_med, p90:r.p90, p95:r.p95, pct_sla:r.pct_sla};
   });
   var rcEl=document.getElementById('range-cards');
   if(rcEl) rcEl.innerHTML=ranges.map(function(r){
-    return '<div class="range-card '+r.cls+'"><div class="rc-label">Rango '+r.id+'</div><div class="rc-km">'+r.label+'</div><div class="rc-count">'+fmtN(r.servicios)+'</div><div class="rc-pct">'+((r.servicios/total)*100).toFixed(1)+'% del total</div><div class="rc-time">Ciclo: <strong>'+fmtMin(r.ciclo)+'</strong></div></div>';
+    var slaClr=r.pct_sla>=90?'var(--verde)':r.pct_sla>=75?'var(--naranja)':'var(--rojo)';
+    return '<div class="range-card '+r.cls+'"><div class="rc-label">Rango '+r.id+'</div><div class="rc-km">'+r.label+'</div><div class="rc-count">'+fmtN(r.servicios)+'</div><div class="rc-pct">'+((r.servicios/total)*100).toFixed(1)+'% del total</div><div class="rc-time">Ciclo prom: <strong>'+fmtMin(r.ciclo)+'</strong></div><div class="rc-time">Mediana: <strong>'+fmtMin(r.ciclo_med)+'</strong></div><div class="rc-time" style="margin-top:6px;font-size:13px;font-weight:700;color:'+slaClr+'">'+r.pct_sla.toFixed(1)+'% en SLA</div></div>';
   }).join('');
   var ctxD=document.getElementById('ch-range-donut');
   if(ctxD){if(CH.rDonut)CH.rDonut.destroy();
@@ -689,7 +687,12 @@ function renderRangos(s) {
   if(ctxB){if(CH.rBar)CH.rBar.destroy();
     CH.rBar=new Chart(ctxB,{type:'bar',data:{labels:ranges.map(function(r){return r.label;}),datasets:[{label:'T. Asignación',data:ranges.map(function(r){return r.asig;}),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4,stack:'s'},{label:'T. Recorrido',data:ranges.map(function(r){return +(r.ciclo-r.asig).toFixed(1);}),backgroundColor:'rgba(245,200,0,.7)',borderRadius:4,stack:'s'}]},options:Object.assign({},baseOpts(),{plugins:Object.assign({},baseOpts().plugins,{legend:legend(),tooltip:Object.assign({},baseOpts().plugins.tooltip,{callbacks:{label:function(c){return ' '+c.dataset.label+': '+fmtMin(c.raw);}}})})})}); }
   var tbl=document.getElementById('tbl-rangos');
-  if(tbl) tbl.innerHTML='<table class="data-table"><thead><tr><th>Rango KM</th><th>Servicios</th><th>Part. %</th><th>T. Asignación</th><th>T. Ciclo</th><th>SLA</th></tr></thead><tbody>'+ranges.map(function(r){return '<tr><td>'+r.label+'</td><td>'+fmtN(r.servicios)+'</td><td>'+((r.servicios/total)*100).toFixed(1)+'%</td><td>'+slaBadge(r.asig,60)+'</td><td>'+slaBadge(r.ciclo,r.sla)+'</td><td>'+slaIcon(r.ciclo,r.sla)+' ≤'+fmtMin(r.sla)+'</td></tr>';}).join('')+'</tbody></table>';
+  if(tbl) tbl.innerHTML='<table class="data-table"><thead><tr><th>Rango KM</th><th>Servicios</th><th>Part. %</th><th>T. Asignación</th><th>Ciclo Prom</th><th>Ciclo Mediana</th><th>P90</th><th>% SLA ≤180m</th><th>Estado</th></tr></thead><tbody>'+
+    ranges.map(function(r){
+      var pctSla=r.pct_sla.toFixed(1)+'%';
+      var slaEstado=r.pct_sla>=90?'<span class="b b-v">🟢 '+pctSla+'</span>':r.pct_sla>=75?'<span class="b b-n">🟡 '+pctSla+'</span>':'<span class="b b-r">🔴 '+pctSla+'</span>';
+      return '<tr><td>'+r.label+'</td><td>'+fmtN(r.servicios)+'</td><td>'+((r.servicios/total)*100).toFixed(1)+'%</td><td>'+fmtMin(r.asig)+'</td><td>'+slaBadge(r.ciclo,r.sla)+'</td><td>'+fmtMin(r.ciclo_med)+'</td><td>'+fmtMin(r.p90)+'</td><td>'+slaEstado+'</td><td>'+slaIcon(r.ciclo,r.sla)+' SLA ≤'+fmtMin(r.sla)+'</td></tr>';
+    }).join('')+'</tbody></table>';
 }
 
 function getSemStats(dias) {
@@ -789,8 +792,8 @@ function renderInsights(s) {
     {ic:'⚠️',t:'La hora <strong>'+hWorst.hora+':00h</strong> registra el peor tiempo de asignación: <strong>'+fmtMin(hWorst.asig_min)+'</strong>. Refleja escasez crítica de Quickers activos en esa franja.',m:'SLA por franja'},
     {ic:'🚀',t:'Mejor día: <strong>'+best.label+'</strong> con ciclo de <strong>'+fmtMin(best.fin_min)+'</strong> — <strong>'+((s.fin_prom-best.fin_min)/s.fin_prom*100).toFixed(0)+'%</strong> bajo el promedio. Usar como benchmark de mejores prácticas.',m:'Benchmark eficiencia'},
     {ic:'🔴',t:'Peor día: <strong>'+worst.label+'</strong> con <strong>'+fmtMin(worst.fin_min)+'</strong>, superando el SLA de 180 min. Tiempo de asignación ese día: <strong>'+fmtMin(worst.asig_min)+'</strong>.',m:'Incumplimiento SLA'},
-    {ic:'📦',t:'El <strong>22%</strong> de servicios está en recorridos <4 km. Son los más rentables por Quicker: más entregas por hora. Concentrar flota en esta zona maximiza la productividad.',m:'Rango km'},
-    {ic:'📍',t:'Los servicios <strong>>10 km</strong> (19%) consumen el mayor tiempo por entrega (~'+fmtMin(s.fin_prom*1.42)+'). Evaluar tarifa diferencial para estos servicios.',m:'Costo oportunidad distancia'},
+    {ic:'📦',t:'El <strong>21.5%</strong> (691 servicios) están en recorridos 0–4 km con ciclo promedio de <strong>96.5 min</strong> y nivel de servicio del <strong>89.1%</strong>. Son los más eficientes: 30 min menos que el promedio global.',m:'Rango km — dato real'},
+    {ic:'📍',t:'Los servicios <strong>>10 km representan el 37.3%</strong> (1,202 svc) — el rango más grande — con ciclo de <strong>154.1 min</strong> y solo el <strong>70.1% en SLA</strong>. Son el principal driver de incumplimiento.',m:'Rango >10 km — dato real'},
     {ic:'📈',t:'<strong>Sem 22</strong> fue la de mayor volumen ('+(semStats[1]?fmtN(semStats[1].servicios):'-')+' svc). El crecimiento requiere escalar disponibilidad de Quickers para mantener SLA.',m:'Evolución semanal'},
     {ic:'⚡',t:'Tiempo promedio de asignación de <strong>'+fmtMin(s.asig_prom)+'</strong> está <strong>'+( s.asig_prom<=60?'dentro':'fuera')+' del SLA de 60 min</strong>. Picos 6–7h y 21–22h son los eventos críticos.',m:'Estado SLA asignación'},
     {ic:'🌙',t:'Franjas nocturnas (21–23h) presentan ciclos críticos de hasta <strong>'+fmtMin(Math.max.apply(null,RAW_HORAS.filter(function(h){return h.hora>=21;}).map(function(h){return h.fin_min;})))+'</strong>. Urgente refuerzo de cobertura nocturna.',m:'Operación nocturna'},
