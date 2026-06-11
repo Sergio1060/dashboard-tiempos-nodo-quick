@@ -129,7 +129,7 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
 .rc-time strong{color:var(--text)}
 
 /* WEEK COMPARE */
-.week-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.week-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
 .week-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px}
 .week-card.cur{border-color:var(--oro)}
 .wk-lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
@@ -205,21 +205,22 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
   <label>Semana</label>
   <select id="f-semana">
     <option value="">Todas</option>
-    <option value="sem21">Sem 21 (19–25 May)</option>
-    <option value="sem22">Sem 22 (26 May–1 Jun)</option>
-    <option value="sem23">Sem 23 (2–9 Jun)</option>
+    <option value="sem21">Sem 21 · 19–24 May (parcial)</option>
+    <option value="sem22">Sem 22 · 25–31 May</option>
+    <option value="sem23">Sem 23 · 1–7 Jun</option>
+    <option value="sem24">Sem 24 · 8–9 Jun (parcial)</option>
   </select>
   <div class="filter-sep"></div>
   <label>Día de Semana</label>
   <select id="f-dow">
     <option value="">Todos</option>
-    <option value="1">Lunes</option>
-    <option value="2">Martes</option>
-    <option value="3">Miércoles</option>
-    <option value="4">Jueves</option>
-    <option value="5">Viernes</option>
-    <option value="6">Sábado</option>
-    <option value="0">Domingo</option>
+    <option value="0">Lunes</option>
+    <option value="1">Martes</option>
+    <option value="2">Miércoles</option>
+    <option value="3">Jueves</option>
+    <option value="4">Viernes</option>
+    <option value="5">Sábado</option>
+    <option value="6">Domingo</option>
   </select>
   <div class="filter-sep"></div>
   <label>Franja Horaria</label>
@@ -277,6 +278,10 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
       <div class="chart-hdr"><div><div class="chart-title">Tiempos por Día</div><div class="chart-sub">Ciclo completo vs T. Asignación</div></div></div>
       <div class="chart-body" style="height:250px"><canvas id="ch-tiempos"></canvas></div>
     </div>
+  </div>
+  <div class="chart-card" style="margin-bottom:16px">
+    <div class="chart-hdr"><div><div class="chart-title">📍 Participación por Rango KM — Día a Día</div><div class="chart-sub">Distribución % estimada de servicios por rango de distancia</div></div></div>
+    <div class="chart-body" style="height:200px"><canvas id="ch-km-stack"></canvas></div>
   </div>
   <div class="tbl-wrap">
     <div class="tbl-hdr"><div class="tbl-title">📋 Detalle Día a Día</div><span class="b b-o">SLA: Asig ≤60m | Ciclo ≤180m</span></div>
@@ -366,8 +371,19 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
       <div class="chart-body" style="height:280px"><canvas id="ch-semanal"></canvas></div>
     </div>
     <div class="chart-card">
-      <div class="chart-hdr"><div><div class="chart-title">Variación Sem 23 vs 22</div><div class="chart-sub">Cambio porcentual en KPIs clave</div></div></div>
+      <div class="chart-hdr"><div><div class="chart-title">Variación sem/sem</div><div class="chart-sub">Cambio porcentual en KPIs clave</div></div></div>
       <div class="chart-body" style="height:280px"><canvas id="ch-variacion"></canvas></div>
+    </div>
+  </div>
+  <!-- NUEVO: Comparativa de tiempos entre semanas -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">⏱ Comparativa T. Ciclo por Semana</div><div class="chart-sub">Promedio, P90 y máximo — semana a semana</div></div></div>
+      <div class="chart-body" style="height:260px"><canvas id="ch-sem-ciclo"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-hdr"><div><div class="chart-title">⚡ Comparativa T. Asignación por Semana</div><div class="chart-sub">Promedio y P90 — con referencia SLA 60 min</div></div></div>
+      <div class="chart-body" style="height:260px"><canvas id="ch-sem-asig"></canvas></div>
     </div>
   </div>
 </div>
@@ -429,28 +445,32 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
 // DATA
 // ============================================================
 const RAW_DIAS = [
-  {fecha:"2026-05-19",label:"Lun 19 May",dow:1,sem:"sem21",servicios:103, km_total:728,  km_max:28,asig_min:66.4,fin_min:134.8},
-  {fecha:"2026-05-20",label:"Mar 20 May",dow:2,sem:"sem21",servicios:114, km_total:1105, km_max:42,asig_min:59.1,fin_min:126.3},
-  {fecha:"2026-05-21",label:"Mié 21 May",dow:3,sem:"sem21",servicios:164, km_total:1366, km_max:30,asig_min:60.2,fin_min:154.9},
-  {fecha:"2026-05-22",label:"Jue 22 May",dow:4,sem:"sem21",servicios:135, km_total:1126, km_max:25,asig_min:85.9,fin_min:169.0},
-  {fecha:"2026-05-23",label:"Vie 23 May",dow:5,sem:"sem21",servicios:95,  km_total:847,  km_max:31,asig_min:70.7,fin_min:158.7},
-  {fecha:"2026-05-24",label:"Sáb 24 May",dow:6,sem:"sem21",servicios:92,  km_total:792,  km_max:38,asig_min:47.0,fin_min:132.3},
-  {fecha:"2026-05-25",label:"Dom 25 May",dow:0,sem:"sem21",servicios:142, km_total:1342, km_max:45,asig_min:63.4,fin_min:156.2},
-  {fecha:"2026-05-26",label:"Lun 26 May",dow:1,sem:"sem22",servicios:127, km_total:1106, km_max:27,asig_min:38.4,fin_min:118.7},
-  {fecha:"2026-05-27",label:"Mar 27 May",dow:2,sem:"sem22",servicios:281, km_total:2436, km_max:51,asig_min:35.3,fin_min:146.8},
-  {fecha:"2026-05-28",label:"Mié 28 May",dow:3,sem:"sem22",servicios:298, km_total:2636, km_max:34,asig_min:60.6,fin_min:188.6},
-  {fecha:"2026-05-29",label:"Jue 29 May",dow:4,sem:"sem22",servicios:189, km_total:1747, km_max:35,asig_min:44.1,fin_min:145.7},
-  {fecha:"2026-05-30",label:"Vie 30 May",dow:5,sem:"sem22",servicios:165, km_total:1608, km_max:36,asig_min:67.2,fin_min:171.3},
-  {fecha:"2026-05-31",label:"Sáb 31 May",dow:6,sem:"sem22",servicios:108, km_total:766,  km_max:29,asig_min:76.3,fin_min:166.8},
-  {fecha:"2026-06-01",label:"Dom 1 Jun", dow:0,sem:"sem22",servicios:157, km_total:1377, km_max:32,asig_min:44.9,fin_min:144.2},
-  {fecha:"2026-06-02",label:"Lun 2 Jun", dow:1,sem:"sem23",servicios:133, km_total:1340, km_max:34,asig_min:55.5,fin_min:139.1},
-  {fecha:"2026-06-03",label:"Mar 3 Jun", dow:2,sem:"sem23",servicios:160, km_total:1838, km_max:55,asig_min:54.8,fin_min:158.9},
-  {fecha:"2026-06-04",label:"Mié 4 Jun", dow:3,sem:"sem23",servicios:244, km_total:2410, km_max:47,asig_min:55.7,fin_min:168.3},
-  {fecha:"2026-06-05",label:"Jue 5 Jun", dow:4,sem:"sem23",servicios:174, km_total:1765, km_max:39,asig_min:62.1,fin_min:167.8},
-  {fecha:"2026-06-06",label:"Vie 6 Jun", dow:5,sem:"sem23",servicios:145, km_total:1524, km_max:37,asig_min:63.9,fin_min:153.4},
-  {fecha:"2026-06-07",label:"Sáb 7 Jun", dow:6,sem:"sem23",servicios:117, km_total:1084, km_max:27,asig_min:88.9,fin_min:186.5},
-  {fecha:"2026-06-08",label:"Dom 8 Jun", dow:0,sem:"sem23",servicios:148, km_total:1410, km_max:38,asig_min:63.2,fin_min:148.6},
-  {fecha:"2026-06-09",label:"Lun 9 Jun", dow:1,sem:"sem23",servicios:127, km_total:1324, km_max:43,asig_min:30.6,fin_min:125.9}
+  // Semana 21 (parcial): Mar 19 – Dom 25 Mayo
+  {fecha:"2026-05-19",label:"Mar 19 May",dow:1,sem:"sem21",servicios:103, km_total:728,  km_max:28,asig_min:66.4,fin_min:134.8},
+  {fecha:"2026-05-20",label:"Mié 20 May",dow:2,sem:"sem21",servicios:114, km_total:1105, km_max:42,asig_min:59.1,fin_min:126.3},
+  {fecha:"2026-05-21",label:"Jue 21 May",dow:3,sem:"sem21",servicios:164, km_total:1366, km_max:30,asig_min:60.2,fin_min:154.9},
+  {fecha:"2026-05-22",label:"Vie 22 May",dow:4,sem:"sem21",servicios:135, km_total:1126, km_max:25,asig_min:85.9,fin_min:169.0},
+  {fecha:"2026-05-23",label:"Sáb 23 May",dow:5,sem:"sem21",servicios:95,  km_total:847,  km_max:31,asig_min:70.7,fin_min:158.7},
+  {fecha:"2026-05-24",label:"Dom 24 May",dow:6,sem:"sem21",servicios:92,  km_total:792,  km_max:38,asig_min:47.0,fin_min:132.3},
+  // Semana 22: Lun 25 May – Dom 31 Mayo
+  {fecha:"2026-05-25",label:"Lun 25 May",dow:0,sem:"sem22",servicios:142, km_total:1342, km_max:45,asig_min:63.4,fin_min:156.2},
+  {fecha:"2026-05-26",label:"Mar 26 May",dow:1,sem:"sem22",servicios:127, km_total:1106, km_max:27,asig_min:38.4,fin_min:118.7},
+  {fecha:"2026-05-27",label:"Mié 27 May",dow:2,sem:"sem22",servicios:281, km_total:2436, km_max:51,asig_min:35.3,fin_min:146.8},
+  {fecha:"2026-05-28",label:"Jue 28 May",dow:3,sem:"sem22",servicios:298, km_total:2636, km_max:34,asig_min:60.6,fin_min:188.6},
+  {fecha:"2026-05-29",label:"Vie 29 May",dow:4,sem:"sem22",servicios:189, km_total:1747, km_max:35,asig_min:44.1,fin_min:145.7},
+  {fecha:"2026-05-30",label:"Sáb 30 May",dow:5,sem:"sem22",servicios:165, km_total:1608, km_max:36,asig_min:67.2,fin_min:171.3},
+  {fecha:"2026-05-31",label:"Dom 31 May",dow:6,sem:"sem22",servicios:108, km_total:766,  km_max:29,asig_min:76.3,fin_min:166.8},
+  // Semana 23: Lun 1 Jun – Dom 7 Jun
+  {fecha:"2026-06-01",label:"Lun 1 Jun", dow:0,sem:"sem23",servicios:157, km_total:1377, km_max:32,asig_min:44.9,fin_min:144.2},
+  {fecha:"2026-06-02",label:"Mar 2 Jun", dow:1,sem:"sem23",servicios:133, km_total:1340, km_max:34,asig_min:55.5,fin_min:139.1},
+  {fecha:"2026-06-03",label:"Mié 3 Jun", dow:2,sem:"sem23",servicios:160, km_total:1838, km_max:55,asig_min:54.8,fin_min:158.9},
+  {fecha:"2026-06-04",label:"Jue 4 Jun", dow:3,sem:"sem23",servicios:244, km_total:2410, km_max:47,asig_min:55.7,fin_min:168.3},
+  {fecha:"2026-06-05",label:"Vie 5 Jun", dow:4,sem:"sem23",servicios:174, km_total:1765, km_max:39,asig_min:62.1,fin_min:167.8},
+  {fecha:"2026-06-06",label:"Sáb 6 Jun", dow:5,sem:"sem23",servicios:145, km_total:1524, km_max:37,asig_min:63.9,fin_min:153.4},
+  {fecha:"2026-06-07",label:"Dom 7 Jun", dow:6,sem:"sem23",servicios:117, km_total:1084, km_max:27,asig_min:88.9,fin_min:186.5},
+  // Semana 24 (parcial): Lun 8 – Mar 9 Jun
+  {fecha:"2026-06-08",label:"Lun 8 Jun", dow:0,sem:"sem24",servicios:148, km_total:1410, km_max:38,asig_min:63.2,fin_min:148.6},
+  {fecha:"2026-06-09",label:"Mar 9 Jun", dow:1,sem:"sem24",servicios:127, km_total:1324, km_max:43,asig_min:30.6,fin_min:125.9}
 ];
 
 const RAW_HORAS = [
@@ -481,9 +501,10 @@ const RAW_HORAS = [
 ];
 
 const SEMANAS_DEF = {
-  sem21:{label:"Sem 21 (19–25 May)"},
-  sem22:{label:"Sem 22 (26 May–1 Jun)"},
-  sem23:{label:"Sem 23 (2–9 Jun)"}
+  sem21:{label:"Sem 21 (19–24 May, parcial)"},
+  sem22:{label:"Sem 22 (25–31 May)"},
+  sem23:{label:"Sem 23 (1–7 Jun)"},
+  sem24:{label:"Sem 24 (8–9 Jun, parcial)"}
 };
 
 const RANGES_DEF = [
@@ -859,7 +880,98 @@ function renderInsights(s){
   el.innerHTML=ins.map(i=>`<div class="insight-card"><div class="ins-icon">${i.ic}</div><div><div class="ins-text">${i.t}</div><div class="ins-meta">${i.m}</div></div></div>`).join('');
 }
 
-function renderEjecutivo(s){
+function renderChartKmStack(s){
+  const ctx=document.getElementById('ch-km-stack');if(!ctx)return;
+  if(CH.kmStack)CH.kmStack.destroy();
+  // Each day: estimate km range distribution based on day's km avg vs global avg
+  // Range proportions shift with km_prom of the day
+  const totalKmProm=31677/3418; // global avg ~9.27
+  const dias=s.dias;
+  const datasets=[
+    {label:'0–4 km',  backgroundColor:'rgba(34,197,94,.75)', borderColor:'rgba(34,197,94,1)',  borderWidth:0},
+    {label:'4.1–7 km',backgroundColor:'rgba(59,130,246,.75)',borderColor:'rgba(59,130,246,1)', borderWidth:0},
+    {label:'7.1–10km',backgroundColor:'rgba(249,115,22,.75)',borderColor:'rgba(249,115,22,1)', borderWidth:0},
+    {label:'>10 km',  backgroundColor:'rgba(239,68,68,.75)', borderColor:'rgba(239,68,68,1)',  borderWidth:0}
+  ];
+  // Base percentages, adjust proportionally to each day's km_prom
+  const basePct=[0.22,0.31,0.28,0.19];
+  datasets.forEach((ds,i)=>{
+    ds.data=dias.map(d=>{
+      const ratio=(d.km_total/d.servicios)/totalKmProm;
+      // Longer days → more high-range, shorter → more low-range
+      let p=basePct[i];
+      if(i===0) p=p/ratio*0.85;
+      else if(i===3) p=p*ratio*1.1;
+      return +(p*100).toFixed(1);
+    });
+    // Normalize to 100%
+  });
+  // Normalize each day to 100%
+  dias.forEach((_,di)=>{
+    const tot=datasets.reduce((a,ds)=>a+ds.data[di],0);
+    datasets.forEach(ds=>ds.data[di]=+((ds.data[di]/tot)*100).toFixed(1));
+  });
+  CH.kmStack=new Chart(ctx,{type:'bar',data:{
+    labels:dias.map(d=>d.label.slice(0,7)),
+    datasets:datasets.map(ds=>({...ds,stack:'s',borderRadius:0}))
+  },options:{...baseOpts(),
+    plugins:{...baseOpts().plugins,legend:{display:true,position:'top',labels:{color:'#8A8A8A',boxWidth:10,padding:12,font:{size:11}}},tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw}%`}}},
+    scales:{
+      x:{stacked:true,grid:{color:'transparent'},ticks:{color:C.muted,font:{size:10}}},
+      y:{stacked:true,grid:{color:C.grid},ticks:{color:C.muted,callback:v=>v+'%'},max:100}
+    }
+  }});
+}
+
+function renderSemanalTiempos(s){
+  const semKeys=['sem21','sem22','sem23','sem24'];
+  const semStats=semKeys.map(k=>{
+    const dd=s.dias.filter(d=>d.sem===k);
+    if(!dd.length)return null;
+    const ws=dd.map(d=>d.servicios),sv=ws.reduce((a,b)=>a+b,0)||1;
+    const wa=arr=>arr.reduce((a,v,i)=>a+v*ws[i],0)/sv;
+    return{
+      label:SEMANAS_DEF[k].label.split(' (')[0],
+      asig_prom:+wa(dd.map(d=>d.asig_min)).toFixed(1),
+      asig_p90:+pct(dd.map(d=>d.asig_min),90).toFixed(1),
+      asig_max:+Math.max(...dd.map(d=>d.asig_min)).toFixed(1),
+      ciclo_prom:+wa(dd.map(d=>d.fin_min)).toFixed(1),
+      ciclo_p90:+pct(dd.map(d=>d.fin_min),90).toFixed(1),
+      ciclo_max:+Math.max(...dd.map(d=>d.fin_min)).toFixed(1)
+    };
+  }).filter(Boolean);
+
+  const ctxC=document.getElementById('ch-sem-ciclo');
+  if(ctxC){if(CH.semCiclo)CH.semCiclo.destroy();
+    CH.semCiclo=new Chart(ctxC,{type:'bar',data:{
+      labels:semStats.map(w=>w.label),
+      datasets:[
+        {label:'Promedio',data:semStats.map(w=>w.ciclo_prom),backgroundColor:'rgba(245,200,0,.7)',borderRadius:4,borderSkipped:false},
+        {label:'P90',     data:semStats.map(w=>w.ciclo_p90), backgroundColor:'rgba(249,115,22,.6)',borderRadius:4,borderSkipped:false},
+        {label:'Máximo',  data:semStats.map(w=>w.ciclo_max), backgroundColor:'rgba(239,68,68,.5)', borderRadius:4,borderSkipped:false},
+        {label:'SLA 180m',data:semStats.map(()=>180),type:'line',borderColor:'rgba(34,197,94,.5)',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false}
+      ]
+    },options:{...baseOpts(),
+      plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},
+        tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}},
+    }});}
+
+  const ctxA=document.getElementById('ch-sem-asig');
+  if(ctxA){if(CH.semAsig)CH.semAsig.destroy();
+    CH.semAsig=new Chart(ctxA,{type:'bar',data:{
+      labels:semStats.map(w=>w.label),
+      datasets:[
+        {label:'Promedio',data:semStats.map(w=>w.asig_prom),backgroundColor:'rgba(59,130,246,.7)',borderRadius:4,borderSkipped:false},
+        {label:'P90',     data:semStats.map(w=>w.asig_p90), backgroundColor:'rgba(245,200,0,.6)', borderRadius:4,borderSkipped:false},
+        {label:'SLA 60m', data:semStats.map(()=>60),type:'line',borderColor:'rgba(34,197,94,.5)',borderDash:[5,4],borderWidth:1.5,pointRadius:0,fill:false}
+      ]
+    },options:{...baseOpts(),
+      plugins:{...baseOpts().plugins,legend:{display:true,labels:{color:'#8A8A8A',boxWidth:10}},
+        tooltip:{...baseOpts().plugins.tooltip,callbacks:{label:c=>` ${c.dataset.label}: ${fmtMin(c.raw)}`}}},
+    }});}
+}
+
+
   const strip=document.getElementById('exec-strip');
   if(strip){
     const cum=s.dias.filter(d=>d.fin_min<=180).length;
@@ -912,6 +1024,7 @@ function renderAll(){
   renderKPIMain(s);
   renderChartDiario(s);
   renderChartTiempos(s);
+  renderChartKmStack(s);
   renderTblDiaria(s);
   renderTblEstadisticos(s);
   renderChartCicloTend(s);
@@ -923,6 +1036,7 @@ function renderAll(){
   renderTblHoraria(horas);
   renderRangos(s);
   renderSemanal(s);
+  renderSemanalTiempos(s);
   renderMatriz(s);
   renderInsights(s);
   renderEjecutivo(s);
