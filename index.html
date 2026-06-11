@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Go — Dashboard Operativo | Análisis de Tiempos Nodo</title>
+  <meta name="description" content="Dashboard ejecutivo de análisis operativo Quick Go. Tiempos de ciclo, asignación y recorrido por nodo.">
+  <link rel="stylesheet" href="styles.css">
+  <!-- PWA manifest (opcional) -->
+  <meta name="theme-color" content="#0D0D0D">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- LOADING -->
+<div class="loading-overlay" id="loading-overlay">
+  <div class="loading-logo">QGO</div>
+  <div style="font-size:12px;color:#5A5A5A;margin-top:8px;letter-spacing:2px;">OPERACIONES</div>
+  <div class="loading-bar"><div class="loading-progress"></div></div>
+  <div class="loading-text">Cargando análisis operativo...</div>
+</div>
+
+<!-- TOP BAR -->
+<header class="topbar">
+  <div class="topbar-brand">
+    <div class="brand-mark"><span>Q</span></div>
+    <div>
+      <div class="brand-name">Quick Go</div>
+      <div class="brand-sub">Dashboard Operativo · Análisis de Tiempos</div>
+    </div>
+  </div>
+  <div class="topbar-meta">
+    <span class="periodo-badge">📅 19 May – 09 Jun 2026</span>
+    <span class="live-dot">Datos actualizados</span>
+  </div>
+</header>
+
+<!-- NAV TABS -->
+<nav class="nav-tabs">
+  <div class="nav-tab active" data-tab="resumen">📊 Resumen Ejecutivo</div>
+  <div class="nav-tab" data-tab="tiempos">⏱ Análisis de Tiempos</div>
+  <div class="nav-tab" data-tab="horario">🕐 Distribución Horaria</div>
+  <div class="nav-tab" data-tab="rangos">📍 Análisis por Km</div>
+  <div class="nav-tab" data-tab="semanal">📅 Evolución Semanal</div>
+  <div class="nav-tab" data-tab="matriz">🎯 Matriz de Eficiencia</div>
+  <div class="nav-tab" data-tab="insights">💡 Insights Automáticos</div>
+  <div class="nav-tab" data-tab="ejecutivo">🏆 Vista Ejecutiva</div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 1: RESUMEN EJECUTIVO                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content active" id="tab-resumen">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Resumen Ejecutivo</div>
+      <div class="section-sub">Período 19 Mayo – 09 Junio 2026 · 22 días de operación · Nodo</div>
+    </div>
+  </div>
+
+  <!-- KPI Cards -->
+  <div class="kpi-grid" id="kpi-resumen"></div>
+
+  <!-- Charts row -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Servicios por Día</div>
+          <div class="chart-card-sub">Volumen diario operado</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:260px">
+        <canvas id="chart-diario"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Tiempos por Día</div>
+          <div class="chart-card-sub">Ciclo completo vs T. Asignación</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:260px">
+        <canvas id="chart-tiempos"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla estadísticos -->
+  <div class="stat-table-wrap">
+    <div class="stat-table-header">
+      <div class="stat-table-title">📐 Estadísticos Descriptivos — Tiempos Operativos</div>
+      <span class="badge oro">SLA Ref: Asig ≤ 60m | Ciclo ≤ 180m</span>
+    </div>
+    <div id="tabla-estadisticos"></div>
+  </div>
+
+  <!-- Tabla diaria -->
+  <div class="stat-table-wrap mt-md">
+    <div class="stat-table-header">
+      <div class="stat-table-title">📋 Detalle Día a Día</div>
+    </div>
+    <div id="tabla-diaria"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 2: ANÁLISIS DE TIEMPOS                                 -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-tiempos">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Análisis Detallado de Tiempos Operativos</div>
+      <div class="section-sub">Asignación · Recorrido · Ciclo Completo</div>
+    </div>
+  </div>
+
+  <!-- Estadísticos descriptivos -->
+  <div class="stat-table-wrap mb-md">
+    <div class="stat-table-header">
+      <div class="stat-table-title">📐 Distribución Estadística de Tiempos</div>
+      <span class="badge naranja">Basado en promedios diarios del período</span>
+    </div>
+    <div id="tabla-estadisticos-2"></div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Tendencia Tiempos Diarios</div>
+          <div class="chart-card-sub">Ciclo completo (min) — 22 días</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:280px">
+        <canvas id="chart-tiempos-2"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Comparativo de Métricas</div>
+          <div class="chart-card-sub">Asignación vs Ciclo vs Recorrido</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:280px">
+        <canvas id="chart-comparativo"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLA Summary cards -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-top:20px;">
+    <div class="kpi-card">
+      <span class="kpi-icon">🎯</span>
+      <div class="kpi-value" id="sla-asig-val">—</div>
+      <div class="kpi-label">SLA Asignación (≤ 60m)</div>
+      <div class="kpi-trend" id="sla-asig-trend"></div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">🎯</span>
+      <div class="kpi-value" id="sla-ciclo-val">—</div>
+      <div class="kpi-label">SLA Ciclo (≤ 180m)</div>
+      <div class="kpi-trend" id="sla-ciclo-trend"></div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">📉</span>
+      <div class="kpi-value" id="best-dia-val">—</div>
+      <div class="kpi-label">Mejor Día (T. Ciclo)</div>
+      <div class="kpi-trend up" id="best-dia-label"></div>
+    </div>
+    <div class="kpi-card">
+      <span class="kpi-icon">📈</span>
+      <div class="kpi-value" id="worst-dia-val">—</div>
+      <div class="kpi-label">Peor Día (T. Ciclo)</div>
+      <div class="kpi-trend down" id="worst-dia-label"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 3: DISTRIBUCIÓN HORARIA                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-horario">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Distribución Horaria de Operaciones</div>
+      <div class="section-sub">Franja 00:00 – 23:59h · Volumen y tiempos por hora del día</div>
+    </div>
+  </div>
+
+  <!-- Heatmap -->
+  <div class="chart-card mb-md">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-title">🌡️ Heatmap de Actividad por Hora</div>
+        <div class="chart-card-sub">Intensidad de servicios operados — hover para detalles</div>
+      </div>
+    </div>
+    <div class="chart-card-body" style="padding:20px;">
+      <div style="display:grid; grid-template-columns: repeat(24, 1fr); gap:3px;">
+        <!-- Header labels -->
+        <div id="heatmap-header"></div>
+        <div id="heatmap-horas" style="display:contents;"></div>
+      </div>
+      <!-- Hour labels row -->
+      <div style="display:grid; grid-template-columns:repeat(24,1fr); gap:3px; margin-top:4px;" id="heatmap-labels"></div>
+    </div>
+  </div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Servicios por Franja Horaria</div>
+          <div class="chart-card-sub">Color = cumplimiento SLA asignación</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:280px">
+        <canvas id="chart-horas"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Tiempos por Franja Horaria</div>
+          <div class="chart-card-sub">Asignación y Ciclo vs SLA</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:280px">
+        <canvas id="chart-tiempos-hora"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla horaria -->
+  <div class="stat-table-wrap mt-md">
+    <div class="stat-table-header">
+      <div class="stat-table-title">📋 Detalle por Franja Horaria</div>
+      <span class="badge naranja">🟢 ≤48m | 🟡 49–60m | 🔴 >60m (SLA Asignación)</span>
+    </div>
+    <div id="tabla-horaria"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 4: ANÁLISIS POR KM                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-rangos">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Análisis por Rango de Kilómetros</div>
+      <div class="section-sub">Clasificación automática de servicios por distancia recorrida</div>
+    </div>
+  </div>
+
+  <!-- Range Cards Semáforo -->
+  <div class="range-semaforo" id="range-semaforo"></div>
+
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Participación por Rango</div>
+          <div class="chart-card-sub">Distribución porcentual de servicios</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:280px">
+        <canvas id="chart-ranges-donut"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Tiempos por Rango KM</div>
+          <div class="chart-card-sub">T. Asignación + Recorrido apilados</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:280px">
+        <canvas id="chart-ranges-tiempos"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-table-wrap mt-md">
+    <div class="stat-table-header">
+      <div class="stat-table-title">📋 Tabla Dinámica por Rango de Kilómetros</div>
+    </div>
+    <div id="tabla-ranges"></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 5: EVOLUCIÓN SEMANAL                                   -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-semanal">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Evolución Semanal</div>
+      <div class="section-sub">Semanas 21, 22 y 23 · Comparativo de indicadores clave</div>
+    </div>
+  </div>
+
+  <!-- Semana compare cards -->
+  <div class="week-compare" id="semana-compare"></div>
+
+  <div class="chart-grid wide">
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Servicios y Ciclo por Semana</div>
+          <div class="chart-card-sub">Barras = servicios | Línea = ciclo promedio (min)</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:300px">
+        <canvas id="chart-semanal"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-card-header">
+        <div>
+          <div class="chart-card-title">Semana Actual vs Anterior</div>
+          <div class="chart-card-sub">Variación porcentual de KPIs</div>
+        </div>
+      </div>
+      <div class="chart-card-body" style="height:300px">
+        <canvas id="chart-variacion"></canvas>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 6: MATRIZ DE EFICIENCIA                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-matriz">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Matriz de Eficiencia Operativa</div>
+      <div class="section-sub">Semaforización por cumplimiento de SLA · Asignación ≤60m | Ciclo ≤180m</div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;">
+    <span class="badge verde">🟢 Eficiente — Ambos SLA cumplidos</span>
+    <span class="badge naranja">🟡 En Riesgo — Al menos un SLA en límite</span>
+    <span class="badge rojo">🔴 Fuera de SLA — Incumplimiento crítico</span>
+  </div>
+
+  <div class="stat-table-wrap">
+    <div class="stat-table-header">
+      <div class="stat-table-title">Semáforo Operativo Día a Día</div>
+    </div>
+    <div id="matriz-eficiencia"></div>
+  </div>
+
+  <!-- Eficiencia chart -->
+  <div class="chart-card mt-md">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-title">Distribución de Días por Nivel de Eficiencia</div>
+        <div class="chart-card-sub">Período 19 Mayo – 09 Junio 2026</div>
+      </div>
+    </div>
+    <div class="chart-card-body" style="height:260px">
+      <canvas id="chart-eficiencia-dist"></canvas>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 7: INSIGHTS AUTOMÁTICOS                                -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-insights">
+
+  <div class="section-header">
+    <div class="section-accent"></div>
+    <div>
+      <div class="section-title">Inteligencia Operativa — Insights Automáticos</div>
+      <div class="section-sub">Hallazgos generados automáticamente a partir del análisis de datos</div>
+    </div>
+  </div>
+
+  <div class="insights-grid" id="insights-container"></div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════ -->
+<!-- TAB 8: VISTA EJECUTIVA                                     -->
+<!-- ═══════════════════════════════════════════════════════════ -->
+<div class="main-content tab-content" id="tab-ejecutivo">
+
+  <!-- Executive Hero -->
+  <div class="exec-hero">
+    <div class="exec-hero-left">
+      <h1>Análisis Operativo<br>Nodo · Q2 2026</h1>
+      <p>Período 19 Mayo – 09 Junio 2026 · 22 días de operación activa</p>
+      <p style="margin-top:8px;">
+        <span class="badge oro">Preparado para Comité Gerencial</span>
+      </p>
+    </div>
+    <div class="exec-kpi-strip" id="exec-kpis"></div>
+  </div>
+
+  <!-- Tendencia ejecutiva -->
+  <div class="chart-card mb-md">
+    <div class="chart-card-header">
+      <div>
+        <div class="chart-card-title">📈 Tendencia de Ciclo Completo — Con Referencia SLA</div>
+        <div class="chart-card-sub">Puntos coloreados por semáforo SLA | Línea roja = límite 180 min</div>
+      </div>
+    </div>
+    <div class="chart-card-body" style="height:300px">
+      <canvas id="chart-exec-tendencia"></canvas>
+    </div>
+  </div>
+
+  <!-- Highlights ejecutivos -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px; margin-bottom:20px;" id="exec-highlights"></div>
+
+  <!-- Nota de actualización -->
+  <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-top:16px;">
+    <div style="font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--oro);margin-bottom:8px;">📌 Nota de Actualización Semanal</div>
+    <div style="font-size:12px;color:var(--muted);line-height:1.7;">
+      Para actualizar este dashboard semanalmente, reemplazar únicamente el archivo <code style="background:var(--surface3);padding:2px 6px;border-radius:3px;color:var(--text);">data.js</code> con el nuevo período de análisis.<br>
+      Todos los gráficos, tablas e insights se regenerarán automáticamente al cargar la página.<br>
+      <span style="color:var(--oro);">Repositorio GitHub Pages:</span> sergio1060/Torre-de-Control-Quick-Last-Mile
+    </div>
+  </div>
+
+</div>
+
+<!-- DATA + APP SCRIPTS -->
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+<!-- EXTENDED APP LOGIC (charts for extra tabs) -->
+<script>
+// Extra charts and tab-specific renders (run after DOMContentLoaded via app.js init)
+const _origInit = init;
+document.removeEventListener('DOMContentLoaded', _origInit);
+document.addEventListener('DOMContentLoaded', function() {
+  // Run main init
+  _origInit();
+  // Additional renders
+  setTimeout(() => {
+    const s = getStats();
+    const ranges = getRangeData();
+
+    // Tab 2 extras
+    const t2 = document.getElementById('tabla-estadisticos-2');
+    if (t2) t2.innerHTML = document.getElementById('tabla-estadisticos').innerHTML;
+
+    // Best/worst day cards
+    const bv = document.getElementById('best-dia-val');
+    const bl = document.getElementById('best-dia-label');
+    const wv = document.getElementById('worst-dia-val');
+    const wl = document.getElementById('worst-dia-label');
+    if (bv) bv.textContent = fmtMin(s.bestDia.fin_min);
+    if (bl) bl.textContent = s.bestDia.label;
+    if (wv) wv.textContent = fmtMin(s.worstDia.fin_min);
+    if (wl) wl.textContent = s.worstDia.label;
+
+    const cumpleSLA = s.dias.filter(d => d.fin_min <= 180).length;
+    const pctC = ((cumpleSLA / s.dias.length) * 100).toFixed(0);
+    const sv = document.getElementById('sla-asig-val');
+    const st = document.getElementById('sla-asig-trend');
+    const cv = document.getElementById('sla-ciclo-val');
+    const ct = document.getElementById('sla-ciclo-trend');
+    if (sv) { sv.textContent = s.asig_prom <= 60 ? '🟢 OK' : '🔴 RIESGO'; sv.style.fontSize = '18px'; }
+    if (st) { st.textContent = fmtMin(s.asig_prom) + ' promedio'; st.className = 'kpi-trend ' + (s.asig_prom <= 60 ? 'up' : 'down'); }
+    if (cv) { cv.textContent = pctC + '%'; cv.style.color = pctC >= 80 ? 'var(--verde)' : 'var(--naranja)'; }
+    if (ct) { ct.textContent = cumpleSLA + '/' + s.dias.length + ' días en SLA'; ct.className = 'kpi-trend ' + (pctC >= 80 ? 'up' : 'neu'); }
+
+    // Clone chart-tiempos para tab 2
+    const ctx2 = document.getElementById('chart-tiempos-2');
+    if (ctx2 && !CHARTS.tiempos2) {
+      CHARTS.tiempos2 = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: s.dias.map(d => d.label.substring(0,8)),
+          datasets: [{
+            label: 'Ciclo Completo',
+            data: s.dias.map(d => d.fin_min),
+            borderColor: '#F5C800',
+            backgroundColor: 'rgba(245,200,0,0.06)',
+            borderWidth: 2, fill: true, tension: 0.4, pointRadius: 4,
+            pointBackgroundColor: s.dias.map(d => slaColor(d.fin_min, 180))
+          },{
+            label: 'SLA 180m',
+            data: s.dias.map(() => 180),
+            borderColor: 'rgba(239,68,68,0.4)', borderWidth: 1,
+            borderDash: [6,4], pointRadius: 0, fill: false
+          }]
+        },
+        options: { ...baseOpts(), plugins: { ...baseOpts().plugins, legend: { display: true, labels: { color: '#8A8A8A', boxWidth: 12 } } } }
+      });
+    }
+
+    // Comparativo chart tab 2
+    const ctx3 = document.getElementById('chart-comparativo');
+    if (ctx3 && !CHARTS.comparativo) {
+      CHARTS.comparativo = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: ['T. Asignación', 'T. Recorrido Est.', 'T. Ciclo Total'],
+          datasets: [{
+            data: [s.asig_prom, s.recorrido_prom, s.ciclo_prom],
+            backgroundColor: ['rgba(59,130,246,0.7)', 'rgba(245,200,0,0.7)', 'rgba(34,197,94,0.7)'],
+            borderRadius: 8
+          }]
+        },
+        options: {
+          ...baseOpts(),
+          plugins: {
+            ...baseOpts().plugins,
+            tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: ctx => ` ${fmtMin(ctx.raw)}` } }
+          },
+          scales: {
+            x: { grid: { color: '#0D0D0D' }, ticks: { color: '#8A8A8A' } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8A8A8A', callback: v => fmtMin(v) } }
+          }
+        }
+      });
+    }
+
+    // Tabla horaria
+    const th = document.getElementById('tabla-horaria');
+    if (th) {
+      const rows = s.horas.map(h => `
+        <tr>
+          <td>${h.label}</td>
+          <td>${fmtNum(h.servicios)}</td>
+          <td>${((h.servicios/s.total)*100).toFixed(1)}%</td>
+          <td>${fmtNum(h.km_total)}</td>
+          <td><span class="badge ${slaClass(h.asig_min,60)}">${fmtMin(h.asig_min)}</span></td>
+          <td><span class="badge ${slaClass(h.fin_min,180)}">${fmtMin(h.fin_min)}</span></td>
+        </tr>
+      `).join('');
+      th.innerHTML = `<table class="data-table"><thead><tr><th>Hora</th><th>Servicios</th><th>% Total</th><th>Km Total</th><th>T. Asignación</th><th>T. Ciclo</th></tr></thead><tbody>${rows}</tbody></table>`;
+    }
+
+    // Heatmap labels
+    const hl = document.getElementById('heatmap-labels');
+    if (hl) hl.innerHTML = s.horas.map(h => `<div style="text-align:center;font-size:9px;color:#5A5A5A;">${h.hora}</div>`).join('');
+
+    // Variación chart tab 5
+    const ctxVar = document.getElementById('chart-variacion');
+    if (ctxVar && !CHARTS.variacion) {
+      const sem = s.semanas;
+      const vars = [
+        ((sem[2].servicios - sem[1].servicios) / sem[1].servicios * 100).toFixed(1),
+        ((sem[2].fin_min - sem[1].fin_min) / sem[1].fin_min * 100).toFixed(1),
+        ((sem[2].asig_min - sem[1].asig_min) / sem[1].asig_min * 100).toFixed(1),
+        ((sem[2].km_total - sem[1].km_total) / sem[1].km_total * 100).toFixed(1)
+      ].map(Number);
+      CHARTS.variacion = new Chart(ctxVar, {
+        type: 'bar',
+        data: {
+          labels: ['Servicios', 'T. Ciclo', 'T. Asignación', 'Km Total'],
+          datasets: [{
+            label: 'Variación % (Sem 23 vs 22)',
+            data: vars,
+            backgroundColor: vars.map(v => v >= 0 ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)'),
+            borderRadius: 5
+          }]
+        },
+        options: {
+          ...baseOpts(),
+          plugins: {
+            ...baseOpts().plugins,
+            tooltip: { ...baseOpts().plugins.tooltip, callbacks: { label: ctx => ` ${ctx.raw}%` } }
+          },
+          scales: {
+            x: { grid: { color: '#0D0D0D' }, ticks: { color: '#8A8A8A' } },
+            y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#8A8A8A', callback: v => v + '%' } }
+          }
+        }
+      });
+    }
+
+    // Eficiencia distribution chart
+    const ctxEf = document.getElementById('chart-eficiencia-dist');
+    if (ctxEf && !CHARTS.efDist) {
+      const ef = s.dias.filter(d => slaClass(d.asig_min,60)==='verde' && slaClass(d.fin_min,180)==='verde').length;
+      const ri = s.dias.filter(d => slaClass(d.asig_min,60)==='rojo' || slaClass(d.fin_min,180)==='rojo').length;
+      const riesgo = s.dias.length - ef - ri;
+      CHARTS.efDist = new Chart(ctxEf, {
+        type: 'doughnut',
+        data: {
+          labels: ['🟢 Eficiente', '🟡 En Riesgo', '🔴 Fuera SLA'],
+          datasets: [{
+            data: [ef, riesgo, ri],
+            backgroundColor: ['rgba(34,197,94,0.7)', 'rgba(249,115,22,0.7)', 'rgba(239,68,68,0.7)'],
+            borderColor: '#161616', borderWidth: 3, hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { display: true, position: 'bottom', labels: { color: '#8A8A8A', boxWidth: 12 } },
+            tooltip: { backgroundColor: '#1C1C1C', borderColor: '#2A2A2A', borderWidth: 1,
+              callbacks: { label: ctx => ` ${ctx.raw} días (${((ctx.raw/s.dias.length)*100).toFixed(0)}%)` }
+            }
+          }
+        }
+      });
+    }
+
+    // Exec highlights
+    const eh = document.getElementById('exec-highlights');
+    if (eh) {
+      const cumpleSLA2 = s.dias.filter(d => d.fin_min <= 180).length;
+      const pctC2 = ((cumpleSLA2 / s.dias.length) * 100).toFixed(0);
+      eh.innerHTML = [
+        { icon:'📦', title:'Volumen Total', val:`${fmtNum(s.total)} servicios`, sub:`22 días operativos · ${(s.total/22).toFixed(0)} svc/día promedio` },
+        { icon:'⚡', title:'Eficiencia de Asignación', val:`${fmtMin(s.asig_prom)}`, sub:`SLA ≤ 60m · Estado: ${s.asig_prom <= 60 ? '🟢 CUMPLE' : '🔴 INCUMPLE'}` },
+        { icon:'🎯', title:'Cumplimiento SLA Ciclo', val:`${pctC2}%`, sub:`${cumpleSLA2} de ${s.dias.length} días en SLA ≤180m` },
+        { icon:'📍', title:'Cobertura Operativa', val:`${fmtNum(s.km_total)} km`, sub:`Máximo: ${s.km_max} km | Prom: ${s.km_prom} km/svc` }
+      ].map(h => `
+        <div class="kpi-card">
+          <span class="kpi-icon">${h.icon}</span>
+          <div class="kpi-value" style="font-size:20px;">${h.val}</div>
+          <div class="kpi-label">${h.title}</div>
+          <div class="kpi-trend neu" style="font-size:10px;">${h.sub}</div>
+        </div>
+      `).join('');
+    }
+
+  }, 200);
+});
+</script>
+
+</body>
+</html>
