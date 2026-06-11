@@ -238,6 +238,15 @@ body{background:var(--negro);color:var(--text);font-family:var(--ff-b);font-size
     <option value="riesgo">Riesgo (150–180m)</option>
     <option value="incumple">Incumple (>180m)</option>
   </select>
+  <div class="filter-sep"></div>
+  <label>Rango KM</label>
+  <select id="f-km">
+    <option value="">Todos</option>
+    <option value="1">0 – 4 km</option>
+    <option value="2">4.1 – 7 km</option>
+    <option value="3">7.1 – 10 km</option>
+    <option value="4">&gt; 10 km</option>
+  </select>
   <button class="btn-reset" id="btn-reset">↺ Limpiar filtros</button>
 </div>
 
@@ -501,9 +510,10 @@ function franjaOf(h){return h<=5?'madrugada':h<=11?'manana':h<=17?'tarde':'noche
 // ============================================================
 // FILTER STATE
 // ============================================================
-const FILTERS = {semana:'',dow:'',franja:'',sla:''};
+const FILTERS = {semana:'',dow:'',franja:'',sla:'',km:''};
 
 function getFilteredDias(){
+  const kmBands={1:[0,4],2:[4.01,7],3:[7.01,10],4:[10.01,9999]};
   return RAW_DIAS.filter(d=>{
     if(FILTERS.semana && d.sem!==FILTERS.semana) return false;
     if(FILTERS.dow!=='' && d.dow!==parseInt(FILTERS.dow)) return false;
@@ -511,6 +521,11 @@ function getFilteredDias(){
       if(FILTERS.sla==='cumple'   && d.fin_min>180)  return false;
       if(FILTERS.sla==='riesgo'   && !(d.fin_min>=150&&d.fin_min<=180)) return false;
       if(FILTERS.sla==='incumple' && d.fin_min<=180) return false;
+    }
+    if(FILTERS.km){
+      const [lo,hi]=kmBands[FILTERS.km];
+      const kpd=d.km_total/d.servicios;
+      if(kpd<lo||kpd>hi) return false;
     }
     return true;
   });
@@ -917,15 +932,15 @@ function renderAll(){
 // FILTERS + TABS INIT
 // ============================================================
 function initFilters(){
-  ['f-semana','f-dow','f-franja','f-sla'].forEach(id=>{
+  ['f-semana','f-dow','f-franja','f-sla','f-km'].forEach(id=>{
     document.getElementById(id).addEventListener('change',function(){
-      const map={semana:'f-semana',dow:'f-dow',franja:'f-franja',sla:'f-sla'};
+      const map={semana:'f-semana',dow:'f-dow',franja:'f-franja',sla:'f-sla',km:'f-km'};
       Object.entries(map).forEach(([k,fid])=>FILTERS[k]=document.getElementById(fid).value);
       renderAll();
     });
   });
   document.getElementById('btn-reset').addEventListener('click',()=>{
-    ['f-semana','f-dow','f-franja','f-sla'].forEach(id=>document.getElementById(id).value='');
+    ['f-semana','f-dow','f-franja','f-sla','f-km'].forEach(id=>document.getElementById(id).value='');
     Object.keys(FILTERS).forEach(k=>FILTERS[k]='');
     renderAll();
   });
